@@ -2,16 +2,14 @@
 #define PROJECT_2_ARENA
 
 #include "globals.h"
-#include "Rat.h"
-#include "Player.h"
 #include "History.h"
 
+#include <string>
 #include <iostream>
 using namespace std;
 
 class Rat;
 class Player;
-class History;
 
 class Arena {
  public:

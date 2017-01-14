@@ -1,8 +1,6 @@
 #ifndef PROJECT_2_RAT
 #define PROJECT_2_RAT
 
-#include "Arena.h"
-
 class Arena;
 
 class Rat {
@@ -26,6 +24,6 @@ class Rat {
   int m_idleTurnsRemaining;
 };
 
-bool attemptMove(const Arena& a, int dir, int& r, int& c);
+bool attemptMove(const Arena &a, int dir, int &r, int &c);
 
 #endif  // PROJECT_2_RAT

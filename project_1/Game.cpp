@@ -1,5 +1,13 @@
 #include "Game.h"
 
+#include "globals.h"
+#include "Arena.h"
+#include "History.h"
+#include "Player.h"
+
+#include <iostream>
+using namespace std;
+
 Game::Game(int rows, int cols, int nRats) {
   if (nRats < 0) {
     cout << "***** Cannot create Game with negative number of rats!" << endl;
@@ -59,7 +67,7 @@ string Game::takePlayerTurn() {
       } else if (tolower(playerMove[0]) == 'h') {
         m_arena->history().display();
         cout << "Press enter to continue.";
-        cin.ignore(10000,'\n');
+        cin.ignore(10000, '\n');
         return "history";
       } else if (decodeDirection(playerMove[0], dir)) {
         return player->move(dir);
@@ -78,7 +86,7 @@ void Game::play() {
       cout << msg << endl;
       break;
     }
-    if(msg != "history") {
+    if (msg != "history") {
       m_arena->moveRats();
       m_arena->display(msg);
     } else {

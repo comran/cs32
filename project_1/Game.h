@@ -1,7 +1,11 @@
 #ifndef PROJECT_2_GAME
 #define PROJECT_2_GAME
 
-#include "Arena.h"
+class Arena;
+
+#include <string>
+#include <iostream>
+using namespace std;
 
 class Game {
  public:

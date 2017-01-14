@@ -1,12 +1,13 @@
 #ifndef PROJECT_2_PLAYER
 #define PROJECT_2_PLAYER
 
-#include "Arena.h"
-
+#include <string>
 #include <iostream>
 using namespace std;
 
 class Arena;
+
+bool attemptMove(const Arena &a, int dir, int &r, int &c);
 
 class Player {
  public:

@@ -1,5 +1,13 @@
 #include "Arena.h"
 
+#include "globals.h"
+#include "Player.h"
+#include "Rat.h"
+
+#include <string>
+#include <iostream>
+using namespace std;
+
 Arena::Arena(int nRows, int nCols) : m_history(nRows, nCols) {
   if (nRows <= 0 || nCols <= 0 || nRows > MAXROWS || nCols > MAXCOLS) {
     cout << "***** Arena created with invalid size " << nRows << " by " << nCols
@@ -167,6 +175,4 @@ void Arena::checkPos(int r, int c) const {
   }
 }
 
-History& Arena::history() {
-  return m_history;
-}
+History &Arena::history() { return m_history; }
