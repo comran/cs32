@@ -1,5 +1,5 @@
-#ifndef PROJECT_2_RAT
-#define PROJECT_2_RAT
+#ifndef PROJECT_1_RAT
+#define PROJECT_1_RAT
 
 class Arena;
 
@@ -26,4 +26,4 @@ class Rat {
 
 bool attemptMove(const Arena &a, int dir, int &r, int &c);
 
-#endif  // PROJECT_2_RAT
+#endif  // PROJECT_1_RAT

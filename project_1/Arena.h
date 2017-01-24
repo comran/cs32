@@ -1,5 +1,5 @@
-#ifndef PROJECT_2_ARENA
-#define PROJECT_2_ARENA
+#ifndef PROJECT_1_ARENA
+#define PROJECT_1_ARENA
 
 #include "globals.h"
 #include "History.h"
@@ -48,4 +48,4 @@ class Arena {
   History m_history;
 };
 
-#endif  // PROJECT_2_ARENA
+#endif  // PROJECT_1_ARENA

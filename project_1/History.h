@@ -1,5 +1,5 @@
-#ifndef PROJECT_2_HISTORY
-#define PROJECT_2_HISTORY
+#ifndef PROJECT_1_HISTORY
+#define PROJECT_1_HISTORY
 
 #include "globals.h"
 
@@ -16,4 +16,4 @@ class History {
   int *history;
 };
 
-#endif  // PROJECT_2_HISTORY
+#endif  // PROJECT_1_HISTORY

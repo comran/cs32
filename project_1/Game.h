@@ -1,5 +1,5 @@
-#ifndef PROJECT_2_GAME
-#define PROJECT_2_GAME
+#ifndef PROJECT_1_GAME
+#define PROJECT_1_GAME
 
 class Arena;
 
@@ -26,4 +26,4 @@ class Game {
 bool recommendMove(const Arena &a, int r, int c, int &bestDir);
 int computeDanger(const Arena &a, int r, int c);
 
-#endif  // PROJECT_2_GAME
+#endif  // PROJECT_1_GAME

@@ -1,7 +1,8 @@
-#ifndef HOMEWORK_1_SEQUENCE
-#define HOMEWORK_1_SEQUENCE
+#ifndef HOMEWORK_1_NEW_SEQUENCE
+#define HOMEWORK_1_NEW_SEQUENCE
 
 #include <iostream>
+#include <string>
 
 namespace {
 const int DEFAULT_MAX_ITEMS = 200;
@@ -11,10 +12,12 @@ typedef unsigned long ItemType;
 
 class Sequence {
  public:
-  Sequence();  // Create an empty sequence (i.e., one whose size() is 0).
+  Sequence(int size = DEFAULT_MAX_ITEMS);
+  //Sequence(const Sequence& other);
+  //Sequence& operator=(const Sequence& rhs);
+  ~Sequence();
 
   bool empty() const;  // Return true if the sequence is empty, otherwise false.
-
   int size() const;  // Return the number of items in the sequence.
 
   bool insert(int pos, const ItemType &value);
@@ -67,8 +70,8 @@ class Sequence {
   void swap(Sequence &other);
 
  private:
-  int size_;
-  ItemType values_[DEFAULT_MAX_ITEMS];
+  int size_, max_size_;
+  ItemType *values_;
 };
 
-#endif  // HOMEWORK_1_SEQUENCE
+#endif  // HOMEWORK_1_NEW_SEQUENCE

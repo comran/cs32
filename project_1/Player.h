@@ -1,5 +1,5 @@
-#ifndef PROJECT_2_PLAYER
-#define PROJECT_2_PLAYER
+#ifndef PROJECT_1_PLAYER
+#define PROJECT_1_PLAYER
 
 #include <string>
 #include <iostream>
@@ -31,4 +31,4 @@ class Player {
   bool m_dead;
 };
 
-#endif  // PROJECT_2_PLAYER
+#endif  // PROJECT_1_PLAYER

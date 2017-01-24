@@ -1,5 +1,5 @@
-#ifndef PROJECT_2_GLOBALS
-#define PROJECT_2_GLOBALS
+#ifndef PROJECT_1_GLOBALS
+#define PROJECT_1_GLOBALS
 
 class Arena;
 
@@ -23,4 +23,4 @@ bool decodeDirection(char ch, int &dir);
 void clearScreen();
 bool attemptMove(const Arena &a, int dir, int &r, int &c);
 
-#endif  // PROJECT_2_GLOBALS
+#endif  // PROJECT_1_GLOBALS
