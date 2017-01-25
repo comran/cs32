@@ -2,7 +2,6 @@
 #define HOMEWORK_1_NEW_SEQUENCE
 
 #include <iostream>
-#include <string>
 
 namespace {
 const int DEFAULT_MAX_ITEMS = 200;
@@ -13,12 +12,12 @@ typedef unsigned long ItemType;
 class Sequence {
  public:
   Sequence(int size = DEFAULT_MAX_ITEMS);
-  //Sequence(const Sequence& other);
-  //Sequence& operator=(const Sequence& rhs);
+  Sequence(const Sequence &sequence);
+  Sequence & operator=(const Sequence &rhs);
   ~Sequence();
 
   bool empty() const;  // Return true if the sequence is empty, otherwise false.
-  int size() const;  // Return the number of items in the sequence.
+  int size() const;    // Return the number of items in the sequence.
 
   bool insert(int pos, const ItemType &value);
   // Insert value into the sequence so that it becomes the item at

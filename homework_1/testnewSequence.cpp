@@ -22,5 +22,11 @@ int main() {
   assert(!a.insert(5, v));
   for (int k = 0; k < 1000; k++) assert(b.insert(k, v));
 
+  a = b;
+  assert(a.size() == 1000);
+  assert(b.size() == 1000);
+  Sequence d(a);
+  assert(d.size() == 1000);
+
   ::std::cout << "Passed all tests" << ::std::endl;
 }

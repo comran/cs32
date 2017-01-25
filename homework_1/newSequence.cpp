@@ -1,10 +1,9 @@
 #include "newSequence.h"
 #include <iostream>
-#include <string>
 #include <stdlib.h>
 
 Sequence::Sequence(int size) {
-  if(size < 0){
+  if (size < 0) {
     ::std::cerr << "Error: Negative size." << ::std::endl;
     exit(1);
   }
@@ -14,8 +13,25 @@ Sequence::Sequence(int size) {
   values_ = new ItemType[size];
 }
 
-Sequence::~Sequence() {
-  delete [] values_;
+Sequence::~Sequence() { delete[] values_; }
+
+Sequence::Sequence(const Sequence &sequence) {
+  max_size_ = sequence.max_size_;
+  size_ = sequence.size_;
+  values_ = new ItemType[max_size_];
+
+  for (int i = 0; i < size(); i++) {
+    values_[i] = sequence.values_[i];
+  }
+}
+
+Sequence &Sequence::operator=(const Sequence &rhs) {
+  if (this != &rhs) {
+    Sequence to_swap(rhs);
+    swap(to_swap);
+  }
+
+  return *this;
 }
 
 bool Sequence::empty() const {
@@ -27,7 +43,8 @@ bool Sequence::empty() const {
 int Sequence::size() const { return size_; }
 
 bool Sequence::insert(int pos, const ItemType &value) {
-  if (pos < 0 || pos > size() || size() >= max_size_) return false;  // Out of bounds.
+  if (pos < 0 || pos > size() || size() >= max_size_)
+    return false;  // Out of bounds.
 
   size_++;
   if (pos == size()) values_[size() - 1] = value;  // Edge case.
@@ -85,7 +102,6 @@ int Sequence::remove(const ItemType &value) {
 
   for (int i = 0; i < size(); i++) {
     if (values_[i] == value) {
-
       for (int j = i; j < size() - 1; j++) {
         values_[j] = values_[j + 1];
       }

@@ -1,7 +1,6 @@
 #include "Sequence.h"
 #include <iostream>
 #include <cassert>
-#include <string>
 
 Sequence::Sequence() : size_(0) {}
 

@@ -18,6 +18,19 @@ int main() {
     assert(s.get(1, x) && x == 4);
     assert(s.get(2, x) && x == 5);
     assert(!s.get(3, x) && x == 5);
+
+    assert(s.remove(1));
+    assert(s.size() == 2);
+    assert(!s.remove(1));
+    assert(s.size() == 2);
+    assert(s.remove(4));
+    assert(s.size() == 1);
+    assert(s.remove(5));
+    assert(s.size() == 0);
+    assert(!s.remove(5));
+    assert(s.size() == 0);
+    assert(s.insert(1) == 0);
+    assert(s.size() == 1);
   }
 
   {
