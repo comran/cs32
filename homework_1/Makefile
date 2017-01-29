@@ -19,7 +19,7 @@ Sequence.o: Sequence.cpp Sequence.h
 ScoreList.o: ScoreList.cpp ScoreList.h
 	$(CC) $(CFLAGS) -c ScoreList.cpp
 
-newSequence.o.o: newSequence.cpp newSequence.h
+newSequence.o: newSequence.cpp newSequence.h
 	$(CC) $(CFLAGS) -c newSequence.cpp
 
 testSequence.o: testSequence.cpp
