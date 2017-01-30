@@ -2,11 +2,17 @@
 #include <iostream>
 #include <cassert>
 
-Sequence::Sequence() : size_(0) { start_node_ = nullptr; }
+// Initialize an empty Sequence.
+Sequence::Sequence() : size_(0), start_node_(nullptr) {}
 
+// Clear out the linked list of nodes, if any still exist.
 Sequence::~Sequence() {
+  // Start at the first node.
   struct Node *current_node = start_node_;
 
+  // Go down the tree, caching the next node and deleting the current node until
+  // there are no more nodes in the tree (leading to a nullptr for the next
+  // node).
   while (current_node != nullptr) {
     Node *next_node = current_node->next;
     delete current_node;
@@ -14,48 +20,62 @@ Sequence::~Sequence() {
   }
 }
 
+// Populate Sequence with the contents of the right-hand-side Sequence
+// parameter.
 Sequence &Sequence::operator=(const Sequence &rhs) {
   if (this != &rhs) {
-    Sequence other(rhs);
-    swap(other);
+    // Copy the right-hand-size sequence to another temporary Sequence object,
+    // and then swap the values in the temporary object with the values of this
+    // one.
+    Sequence temporary_rhs(rhs);
+    swap(temporary_rhs);
   }
 
+  // Return a reference to this object containing the copied values.
   return *this;
 }
 
-Sequence::Sequence(const Sequence &other) {
-  start_node_ = new Node();
-  start_node_->previous = nullptr;
-  start_node_->next = nullptr;
-
+// Initialize a Sequence, copying all elements from the other Sequence into this
+// Sequence.
+Sequence::Sequence(const Sequence &other) : size_(0), start_node_(nullptr) {
+  // Insert all values of the other Sequence into this Sequence, which will
+  // also copy over the size of the other Sequence.
   for (int i = 0; i < other.size(); i++) {
     ItemType value;
-
     other.get(i, value);
+
     insert(i, value);
   }
 }
 
+// Check to see if Sequence is empty by checking for a non-zero positive size.
 bool Sequence::empty() const {
-  if (size_ > 0) return false;
+  if (size() > 0) return false;
 
   return true;
 }
 
+// Getter for the internal size variable.
 int Sequence::size() const { return size_; }
 
+// Insert in the given value at the given position.
 bool Sequence::insert(int pos, const ItemType &value) {
   if (pos < 0 || pos > size()) return false;  // Out of bounds.
 
+  // The rest of this method does not look at size, so increment it here.
+  size_++;
+
+  // Create an unlinked node containing the given value.
   Node *new_node = new Node();
   new_node->value = value;
   new_node->next = nullptr;
   new_node->previous = nullptr;
 
-  size_++;
-
+  // Special case for a node that will replace the start_node_.
   if (pos == 0) {
     if (start_node_ != nullptr) {
+      // Make this replacement for the start_node_ link to the one that already
+      // exists.
       new_node->next = start_node_;
       start_node_->previous = new_node;
     }
@@ -65,12 +85,18 @@ bool Sequence::insert(int pos, const ItemType &value) {
     return true;
   }
 
+  // Generate a pointer to the node before the place where we want to insert a
+  // new node.
   Node *node_before = start_node_;
   for (int i = 0; i < pos - 1; i++) {
     node_before = node_before->next;
   }
 
+  // Cache the node that will come after the node that we are inserting.
   Node *node_after = node_before->next;
+
+  // Link the new node to the nodes before and after. If the node after the new
+  // node does not exist, do not link to a random piece of memory.
   node_before->next = new_node;
   if (node_after != nullptr) node_after->previous = new_node;
   new_node->previous = node_before;
@@ -79,32 +105,40 @@ bool Sequence::insert(int pos, const ItemType &value) {
   return true;
 }
 
+// Insert a new node, such that items before new node < new node < items after
+// new node.
 int Sequence::insert(const ItemType &value) {
+  // Create an unlinked node containing the given value.
   Node *new_node = new Node();
   new_node->value = value;
   new_node->next = nullptr;
   new_node->previous = nullptr;
 
+  // Special case for dealing with an empty start_node_ when Sequence is empty.
   if (size() == 0) {
     size_++;
     start_node_ = new_node;
     return 0;
   }
 
+  // Generate a pointer to the node before the place where we want to insert a
+  // new node.
   Node *current_node = start_node_;
   int i;
-  for (i = 0; i < size() - 0; i++) {
+  for (i = 0; i < size(); i++) {
     if (current_node->value > value) break;
     current_node = current_node->next;
   }
 
+  // Use insert to put the new value in its spot to maintain the order of
+  // Sequence.
   insert(i, value);
 
   return true;
 }
 
 bool Sequence::erase(int pos) {
-  if (pos < 0 || pos >= size()) return false;
+  if (pos < 0 || pos >= size()) return false;  // Out of bounds.
 
   Node *current_node = start_node_;
 
@@ -230,10 +264,10 @@ int Sequence::subsequence(const Sequence& sequence_1, const Sequence& sequence_2
 }
 
 void Sequence::dump() {
-  Node *current = start_node_;
-  for (int i = 0; current != nullptr; i++) {
-    ::std::cout << i << ": " << current->value << ::std::endl;
-    current = current->next;
+  for (int i = 0; i < size(); i++) {
+    ItemType value;
+    if(!get(i, value)) break;
+    ::std::cout << i << ": " << value << ::std::endl;
   }
   ::std::cout << ::std::endl;
 }

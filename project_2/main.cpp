@@ -31,16 +31,23 @@ void test() {
   ::std::cout << "REMOVING " << s->remove("TEST0") << " NODES.\n";
   s->dump();
 
+  ::std::cout << "HERE1\n";
   Sequence *g = new Sequence(*s);
   g->dump();
-  for(int i = 4;i < g->size();i++) {
-    ::std::cout << "HERE\n";
+  for(int i = 2;i < g->size();i++) {
     g->erase(i);
+    i--;
+    ::std::cout << "Erasing " << i << "\n";
   }
+  ::std::cout << "Dump of S...\n";
+  s->dump();
+  ::std::cout << "Dump of G...\n";
+  g->dump();
 
   ::std::cout << "Sequence found @ " << g->subsequence(*s, *g) << ::std::endl;
 
   delete s;
+  delete g;
 }
 
 int main() {
