@@ -1,3 +1,133 @@
+1)
+My Sequence implementation makes use of a singly linked list, where the first/last elements are preceded/followed by null pointers. To find an element at a given index, I wrote code to begin at a start node and traverse the array by using each node's pointer to the next/preious nodes. Whenever a node was inserted or deleted, the next/previous pointers of neighboring elements would be updated to maintain the new order of the Sequence. An empty sequence would simply consist of a start pointer to the null pointer, and any value that is inserted later on would make start pointer point to that node.
+
+start_node >      node #1                 node #2                    node #3
+             previous: nullptr          previous: node #1        previous: node #2
+               next: node #2            next: node #3             next: nullptr
+                  "test1"                  "test2"                  "test3"
+
+2) Pseudocode
+bool Sequence::insert(int pos, const ItemType &value) {
+  if pos is out of bounds:
+    return false
+
+  increment size
+  create a new unlinked node containing value
+  if inserting at position 0:
+    if start_node_ is not empty:
+      link the new node before the current start_node_
+    replace start_node_ with the new node
+    return true
+
+  loop until a pointer to the node before position is found
+  cache a pointer to the node that will follow the new node
+  if a node exists after the new node:
+    link the node after new node to new node
+  link the new node to the nodes before and after it
+
+  return true
+}
+
+int Sequence::insert(const ItemType &value) {
+  if Sequence is empty:
+    delete start_node_ if it still points to something
+    generate a new unlinked node containing value
+    point start_node_ towards this new node
+    increment size
+
+  loop until values of all nodes before index i are less than value
+  insert a new node at i
+
+  return true
+}
+
+bool Sequence::erase(int pos) {
+  if pos is out of bounds:
+    return false
+
+  initialize current_node to point at the start of the sequence
+  if erasing the first node:
+    if there is an element after the first node:
+      unlink the second element from the first element in the sequence
+      cache a pointer to the second element
+      delete the first element
+      replace the start node with the second element
+  else
+    loop until current node points at the node to be erased
+    if a node before current node exists:
+      link this node to the node after current node
+    if a node after current node exists:
+      link this node to the node before current node
+    delete current node
+
+  decrement size
+  return true
+}
+
+int Sequence::remove(const ItemType &value) {
+  initialize the count of items removed to zero
+
+  point current node to the start of sequence
+  for every element in sequence:
+    if the value of the current element equals the parameter value:
+      cache the node after current node
+      delete the matching element
+      decrement size
+      increment the count of items deleted
+    else:
+      point current node to the node after it
+
+  return number of items removed
+}
+
+
+void Sequence::swap(Sequence &other) {
+  cache the original size of this object
+  set the size of this object to the size of the other object
+  set the size of the other object to the cached size
+
+  cache the start node of this object
+  set the start node of this object to the start node of the other object
+  set the start node of the other object to the cached start node
+}
+
+int subsequence(const Sequence &searched_sequence,
+                const Sequence &query_sequence) {
+  if query_sequence is empty or is bigger than what searched_sequence can hold:
+    return a failure code
+
+  for every element in searched_sequence:
+    get the value of the current element of searched_sequence
+    get the value of the first element of query_sequence
+    if these two values do not match:
+      go to the next element in searched_sequence
+
+    initialize a variable tracking to see if the current sequence may be a match
+    for every element after the first in query_sequence:
+      if the element offsetted by the index of the current element of query_sequence is not equal to the element of query sequence:
+        report an unmatched sequence
+
+    if sequence was found:
+      return index of start of sequence
+
+  return an error code for a failed search
+}
+
+void interleave(const Sequence &seq1, const Sequence &seq2, Sequence &result) {
+  erase all elements in result
+
+  if there are no elements in seq1:
+    return seq2
+  else if there are no elements in seq2 as well:
+    return the empty seq1
+
+  initialize variables tracking the current index of seq1 and seq2
+  while there are still elements that have not been interweaved in result:
+    add an element from seq1 to result, if such an element exists
+    add an element from seq2 to result, if such an element exists
+}
+
+3) Test cases
 #include "Sequence.h"
 #include <string>
 #include "Sequence.h"

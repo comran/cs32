@@ -1,0 +1,31 @@
+First 12 items popped off the stack:
+#.  (row, column)
+1.  (6, 4)
+2.  (6, 3)
+3.  (6, 5)
+4.  (7, 5)
+5.  (8, 5)
+6.  (8, 6)
+7.  (8, 7)
+8.  (8, 8)
+9.  (7, 8)
+10. (6, 6)
+11. (5, 4)
+12. (4, 4)
+
+First 12 items popped off the queue:
+#.  (row, column)
+1.  (6, 4)
+2.  (5, 4)
+3.  (6, 5)
+4.  (6, 3)
+5.  (4, 4)
+6.  (6, 6)
+7.  (7, 5)
+8.  (3, 4)
+9.  (4, 5)
+10. (8, 5)
+11. (2, 4)
+12. (4, 6)
+
+These two algoritms differ in the way that stacks and queues differs: While stacks use the formula of first-in-last-out (FILO) to organize added/removed elements and maintain a sequence of items, queues function in terms of first-in-first-out (FIFO). FIFO maintains a sequence of items by always providing the most recently added items to a user of the function whenever an item is fetched, similar to a stack of papers on a desk where a worker places new items on top and also takes new items off the stack to work on. FILO maintains a sequence of items by providing the oldest item in the sequence whenever something is fetched, which is analogous to a queue in a store where the first person to get in line is the first person to be served at checkout. In our program, this means that adding elements to the stack in the order of North, East, South, and West will cause the items to be dealt with in reverse order than how they were put on. (West will be handled first (if a possible route was found), then South, then East, and finally North). For the queue version, these directions will be handled in the same way that they were put on, resulting in a different order that the program deals with processing the data as a sequence of possible routes is produced. On a sidenote, both algorithms start by handling the same coordinate because that is the only item in the stack/queue at the time that the first item is processed by each program.

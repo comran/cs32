@@ -1,5 +1,5 @@
-#ifndef HOMEWORK_1_SEQUENCE
-#define HOMEWORK_1_SEQUENCE
+#ifndef PROJECT_2_SEQUENCE
+#define PROJECT_2_SEQUENCE
 
 #include <iostream>
 #include <string>
@@ -19,7 +19,7 @@ class Sequence {
   ~Sequence();
   Sequence &operator=(const Sequence &rhs);
   bool empty() const;
-  int size() const;
+  inline int size() const { return size_; }
   bool insert(int pos, const ItemType &value);
   int insert(const ItemType &value);
   bool erase(int pos);
@@ -28,16 +28,14 @@ class Sequence {
   bool set(int pos, const ItemType &value);
   int find(const ItemType &value) const;
   void swap(Sequence &other);
-  int subsequence(const Sequence& sequence_1, const Sequence& sequence_2);
-
-  //////////////////////////////////////////////////////////////////////////////
-  void dump();  // TODO(comran): REMOVE
-                // THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  //////////////////////////////////////////////////////////////////////////////
 
  private:
   int size_;
   Node *start_node_;
 };
 
-#endif  // HOMEWORK_1_SEQUENCE
+int subsequence(const Sequence &searched_sequence,
+                const Sequence &query_sequence);
+void interleave(const Sequence &seq1, const Sequence &seq2, Sequence &result);
+
+#endif  // PROJECT_2_SEQUENCE
