@@ -1,7 +1,3 @@
-#include <iostream>
-#include <string>
-using namespace std;
-
 class File {
  public:
   File(string name);
@@ -69,26 +65,3 @@ TextMsg::~TextMsg() {
 }
 
 void TextMsg::open() const { cout << "open text message"; }
-
-void openAndRedisplay(const File *f) {
-  cout << f->name() << ": ";
-  f->open();
-  cout << endl << "Redisplay: ";
-  f->redisplay();
-  cout << endl;
-}
-
-int main() {
-  File *files[4];
-  files[0] = new TextMsg("fromFred.txt");
-  // Videos have a name and running time
-  files[1] = new Video("goblin.mpg", 3780);
-  files[2] = new Picture("kitten.jpg");
-  files[3] = new Picture("baby.jpg");
-
-  for (int k = 0; k < 4; k++) openAndRedisplay(files[k]);
-
-  // Clean up the files before exiting
-  cout << "Cleaning up." << endl;
-  for (int k = 0; k < 4; k++) delete files[k];
-}

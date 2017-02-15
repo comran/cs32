@@ -1,12 +1,7 @@
-#include <iostream>
-#include <string>
-using namespace std;
-
 bool pathExists(string maze[], int nRows, int nCols, int sr, int sc, int er,
                 int ec) {
   if(sr == er && sc == ec) return true;
   maze[sr][sc] = '%';
-
 
   if (sr > 0 /* there is a row above */ &&
       maze[sr - 1][sc] != 'X' /* can move north */ &&
@@ -37,22 +32,4 @@ bool pathExists(string maze[], int nRows, int nCols, int sr, int sc, int er,
   }
 
   return false;
-}
-
-int main() {
-  string maze[10] = {"XXXXXXXXXX",  //////////////////////////////
-                     "X........X",  //////////////////////////////
-                     "XX.X.XXXXX",  //////////////////////////////
-                     "X..X.X...X",  //////////////////////////////
-                     "X..X...X.X",  //////////////////////////////
-                     "XXXX.XXX.X",  //////////////////////////////
-                     "X.X....XXX",  //////////////////////////////
-                     "X..XX.XX.X",  //////////////////////////////
-                     "X...X....X",  //////////////////////////////
-                     "XXXXXXXXXX"};
-
-  if (pathExists(maze, 10, 10, 6, 4, 1, 1))
-    cout << "Solvable!" << endl;
-  else
-    cout << "Out of luck!" << endl;
 }
