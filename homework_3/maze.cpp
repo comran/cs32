@@ -1,4 +1,4 @@
-bool pathExists(string maze[], int nRows, int nCols, int sr, int sc, int er,
+bool pathExists(std::string maze[], int nRows, int nCols, int sr, int sc, int er,
                 int ec) {
   if(sr == er && sc == ec) return true;
   maze[sr][sc] = '%';

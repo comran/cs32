@@ -1,39 +1,41 @@
 class File {
  public:
-  File(string name);
+  File(std::string name);
   virtual ~File();
-  virtual string name() const;
+  virtual std::string name() const;
   virtual void open() const = 0;
   virtual void redisplay() const;
 
  private:
-  string filename_;
+  std::string filename_;
 };
 
-File::File(string filename) : filename_(filename) {}
+File::File(std::string filename) : filename_(filename) {}
 
 File::~File() {}
 
-string File::name() const { return filename_; }
+std::string File::name() const { return filename_; }
 
-void File::redisplay() const { cout << "refresh the screen"; }
+void File::redisplay() const { std::cout << "refresh the screen"; }
 
 class Picture : public File {
  public:
-  Picture(string filename);
+  Picture(std::string filename);
   virtual ~Picture();
   virtual void open() const;
 };
 
-Picture::Picture(string filename) : File(filename) {}
+Picture::Picture(std::string filename) : File(filename) {}
 
-Picture::~Picture() { cout << "Destroying the picture " << name() << endl; }
+Picture::~Picture() {
+  std::cout << "Destroying the picture " << name() << std::endl;
+}
 
-void Picture::open() const { cout << "show picture"; }
+void Picture::open() const { std::cout << "show picture"; }
 
 class Video : public File {
  public:
-  Video(string filename, int duration);
+  Video(std::string filename, int duration);
   virtual ~Video();
   virtual void open() const;
   virtual void redisplay() const;
@@ -42,26 +44,30 @@ class Video : public File {
   int duration_;
 };
 
-Video::Video(string filename, int duration)
+Video::Video(std::string filename, int duration)
     : File(filename), duration_(duration) {}
 
-Video::~Video() { cout << "Destroying " << name() << ", a video" << endl; }
+Video::~Video() {
+  std::cout << "Destroying " << name() << ", a video" << std::endl;
+}
 
-void Video::open() const { cout << "play " << duration_ << " second video"; }
+void Video::open() const {
+  std::cout << "play " << duration_ << " second video";
+}
 
-void Video::redisplay() const { cout << "replay video"; }
+void Video::redisplay() const { std::cout << "replay video"; }
 
 class TextMsg : public File {
  public:
-  TextMsg(string filename);
+  TextMsg(std::string filename);
   virtual ~TextMsg();
   virtual void open() const;
 };
 
-TextMsg::TextMsg(string filename) : File(filename) {}
+TextMsg::TextMsg(std::string filename) : File(filename) {}
 
 TextMsg::~TextMsg() {
-  cout << "Destroying " << name() << ", a text message" << endl;
+  std::cout << "Destroying " << name() << ", a text message" << std::endl;
 }
 
-void TextMsg::open() const { cout << "open text message"; }
+void TextMsg::open() const { std::cout << "open text message"; }

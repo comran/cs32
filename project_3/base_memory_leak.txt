@@ -1,0 +1,6 @@
+==2062== LEAK SUMMARY:
+==2062==    definitely lost: 112 bytes in 2 blocks
+==2062==    indirectly lost: 1,112 bytes in 5 blocks
+==2062==      possibly lost: 8,191,680 bytes in 22 blocks
+==2062==    still reachable: 126,340 bytes in 1,066 blocks
+==2062==         suppressed: 0 bytes in 0 blocks
