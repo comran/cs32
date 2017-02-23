@@ -37,6 +37,10 @@ int StudentWorld::init() {
         new_actor = new Pebble(*this, x, y);
       } else if (item == Field::FieldItem::grasshopper) {
         new_actor = new BabyGrasshopper(*this, x, y);
+      } else if (item == Field::FieldItem::poison) {
+        new_actor = new Poison(*this, x, y);
+      } else if (item == Field::FieldItem::water) {
+        new_actor = new WaterPool(*this, x, y);
       }
 
       if (new_actor != nullptr) {
@@ -79,7 +83,7 @@ void StudentWorld::addFood(int x, int y, int food_points) {
   Actor *food_actor = nullptr;
   std::list<Actor *> food_at_point = actorsOfTypeAt(ActorType::FOOD, x, y);
 
-  if(food_at_point.size() > 0) food_actor = *food_at_point.begin();
+  if (food_at_point.size() > 0) food_actor = *food_at_point.begin();
 
   if (food_actor == nullptr) {
     Actor *new_actor = new Food(*this, x, y, food_points);
@@ -108,12 +112,12 @@ void StudentWorld::updatePositionInGrid(Actor *actor, int to_x, int to_y) {
 
 std::list<Actor *> StudentWorld::actorsOfTypeAt(ActorType actor_type, int x,
                                                 int y) {
-  std::list<Actor*> actors_of_type;
+  std::list<Actor *> actors_of_type;
 
   std::list<Actor *> actors_at_point = actors_map_[x][y];
   for (std::list<Actor *>::const_iterator i = actors_at_point.begin();
        i != actors_at_point.end(); i++) {
-    if((*i)->checkForObjectMatch(actor_type)) actors_of_type.push_back(*i);
+    if ((*i)->checkForObjectMatch(actor_type)) actors_of_type.push_back(*i);
   }
 
   return actors_of_type;
