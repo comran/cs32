@@ -17,7 +17,6 @@ StudentWorld::~StudentWorld() { cleanUp(); }
 
 int StudentWorld::init() {
   cleanUp();
-  //ticks_ = 0;
 
   Field f;
 
@@ -51,6 +50,8 @@ int StudentWorld::init() {
 }
 
 void StudentWorld::cleanUp() {
+  ticks_ = 0;
+
   for (int i = 0; i < actors_.size(); i++) {
     delete actors_[i];
   }
@@ -70,14 +71,24 @@ int StudentWorld::move() {
     if (!actors_[i]->dead()) actors_[i]->doSomething();
   }
 
-  if (++ticks_ >= 2000) return GWSTATUS_NO_WINNER;
+  if (++ticks_ > 2000) return GWSTATUS_NO_WINNER;
   return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::addFood(int x, int y, int food_points) {
-  Actor *new_actor = new Food(*this, x, y, food_points);
-  actors_.push_back(new_actor);
-  actors_map_[x][y].push_back(new_actor);
+  Actor *food_actor = nullptr;
+  std::list<Actor *> food_at_point = actorsOfTypeAt(ActorType::FOOD, x, y);
+
+  if(food_at_point.size() > 0) food_actor = *food_at_point.begin();
+
+  if (food_actor == nullptr) {
+    Actor *new_actor = new Food(*this, x, y, food_points);
+    actors_.push_back(new_actor);
+    actors_map_[x][y].push_back(new_actor);
+    return;
+  }
+
+  food_actor->changePoints(food_points);
 }
 
 void StudentWorld::updateGameStatText() {
@@ -86,11 +97,24 @@ void StudentWorld::updateGameStatText() {
   setGameStatText(ticker_stream.str());
 }
 
-void StudentWorld::updatePositionInGrid(Actor *actor, int to_x,
-                              int to_y) {
-  int from_x = actor->getX();
-  int from_y = actor->getY();
+void StudentWorld::updatePositionInGrid(Actor *actor, int to_x, int to_y) {
+  int from_x = actor->getX(), from_y = actor->getY();
 
   actors_map_[from_x][from_y].remove(actor);
   actors_map_[to_x][to_y].push_back(actor);
+
+  actor->GraphObject::moveTo(to_x, to_y);
+}
+
+std::list<Actor *> StudentWorld::actorsOfTypeAt(ActorType actor_type, int x,
+                                                int y) {
+  std::list<Actor*> actors_of_type;
+
+  std::list<Actor *> actors_at_point = actors_map_[x][y];
+  for (std::list<Actor *>::const_iterator i = actors_at_point.begin();
+       i != actors_at_point.end(); i++) {
+    if((*i)->checkForObjectMatch(actor_type)) actors_of_type.push_back(*i);
+  }
+
+  return actors_of_type;
 }

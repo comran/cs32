@@ -9,6 +9,7 @@
 #include "GameConstants.h"
 
 class Actor;
+enum class ActorType;
 
 class StudentWorld : public GameWorld {
  public:
@@ -20,6 +21,7 @@ class StudentWorld : public GameWorld {
   void addFood(int x, int y, int food_points);
   void updateGameStatText();
   void updatePositionInGrid(Actor *actor, int to_x, int to_y);
+  std::list<Actor *> actorsOfTypeAt(ActorType actor_type, int x, int y);
 
  private:
   std::vector<Actor *> actors_;
