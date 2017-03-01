@@ -26,16 +26,16 @@ class StudentWorld;
 // ////////////////////////// BASE CLASS //////////////////////////////////////
 class Actor : public GraphObject {
  public:
-  Actor(StudentWorld &student_world, ActorType actor_type, int iid, int x,
-        int y, Actor::Direction dir, int depth, int initial_points);
+  Actor(StudentWorld &student_world, ActorType actor_type, int iid, Coordinate coord, Actor::Direction dir, int depth, int initial_points);
   virtual void doSomething() = 0;
   virtual void poison();
   virtual void stun();
   virtual void feed(int &available_food);
   virtual void die();
   virtual void bite();
+  Coordinate getCoord();
   bool dead();
-  void moveTo(int x, int y);
+  void moveTo(Coordinate coord);
   bool checkForObjectMatch(ActorType type);
   ActorType getActorType();
   int getPoints();
@@ -53,32 +53,32 @@ class Actor : public GraphObject {
 // //////////////////////// OBJECT CLASSES /////////////////////////////////////
 class Food : public Actor {
  public:
-  Food(StudentWorld &student_world, int x, int y, int food_points);
+  Food(StudentWorld &student_world, Coordinate coord, int food_points);
   void doSomething();
   void increaseFood(int food_points);
 };
 
 class Pebble : public Actor {
  public:
-  Pebble(StudentWorld &student_world, int x, int y);
+  Pebble(StudentWorld &student_world, Coordinate coord);
   void doSomething();
 };
 
 class Poison : public Actor {
  public:
-  Poison(StudentWorld &student_world, int x, int y);
+  Poison(StudentWorld &student_world, Coordinate coord);
   void doSomething();
 };
 
 class WaterPool : public Actor {
  public:
-  WaterPool(StudentWorld &student_world, int x, int y);
+  WaterPool(StudentWorld &student_world, Coordinate coord);
   void doSomething();
 };
 
 class Pheromone : public Actor {
  public:
-  Pheromone(StudentWorld &student_world, int colony, int x, int y);
+  Pheromone(StudentWorld &student_world, Coordinate coord, int colony);
   void doSomething();
   static ActorType getActorType(int colony);
 
@@ -88,7 +88,7 @@ class Pheromone : public Actor {
 
 class AntHill : public Actor {
  public:
-  AntHill(StudentWorld &student_world, int colony, int x, int y,
+  AntHill(StudentWorld &student_world, int colony, Coordinate coord,
           Compiler *compiler);
   void doSomething();
 
@@ -102,7 +102,7 @@ class AntHill : public Actor {
 // //////////////////////// INSECT CLASSES /////////////////////////////////////
 class Insect : public Actor {
  public:
-  Insect(StudentWorld &student_world, int iid, int x, int y,
+  Insect(StudentWorld &student_world, int iid, Coordinate coord,
          ActorType actor_type, Actor::Direction direction, int depth,
          int points);
   void die();
@@ -118,7 +118,7 @@ class Insect : public Actor {
 
 class Ant : public Insect {
  public:
-  Ant(StudentWorld &student_world, int colony, int x, int y, Compiler *compiler,
+  Ant(StudentWorld &student_world, int colony, Coordinate coord, Compiler *compiler,
       AntHill &my_anthill);
   void doSomething();
   static ActorType getActorTypeFromColony(int colony);
@@ -140,26 +140,24 @@ class Ant : public Insect {
 
 class Grasshopper : public Insect {
  public:
-  Grasshopper(StudentWorld &student_world, int iid, int x, int y, int points);
+  Grasshopper(StudentWorld &student_world, int iid, Coordinate coord, int points);
   void randomMovement();
   void feed(int &availableFood);
 
  private:
-  bool withinBounds(Actor::Direction dir, int distance);
-
   int distance_;
 };
 
 class BabyGrasshopper : public Grasshopper {
  public:
-  BabyGrasshopper(StudentWorld &student_world, int x, int y);
+  BabyGrasshopper(StudentWorld &student_world, Coordinate coord);
   void doSomething();
   void poison();
 };
 
 class AdultGrasshopper : public Grasshopper {
  public:
-  AdultGrasshopper(StudentWorld &student_world, int x, int y);
+  AdultGrasshopper(StudentWorld &student_world, Coordinate coord);
   void doSomething();
   void stun();
 };

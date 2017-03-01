@@ -12,6 +12,20 @@
 class Actor;
 enum class ActorType;
 
+class Coordinate {
+ public:
+  Coordinate(int x, int y);
+  bool operator<(const Coordinate& l) const;
+  int getX() const;
+  int getY() const;
+  void setX(int x);
+  void setY(int y);
+  Coordinate coordInDirection(GraphObject::Direction direction);
+
+ private:
+  int x_, y_;
+};
+
 class StudentWorld : public GameWorld {
  public:
   StudentWorld(std::string assetDir);
@@ -19,13 +33,14 @@ class StudentWorld : public GameWorld {
   virtual int init();
   virtual int move();
   virtual void cleanUp();
-  void addFood(int x, int y, int food_points);
-  void addPheromone(int x, int y, int pheromone_points, ActorType actor_type);
+  void addFood(Coordinate coord, int food_points);
+  void addPheromone(Coordinate coord, int pheromone_points,
+                    ActorType actor_type);
   void updateGameStatText();
-  void updatePositionInGrid(Actor *actor, int to_x, int to_y);
-  std::list<Actor *> actorsOfTypesAt(std::vector<ActorType> actor_types, int x,
-                                     int y);
-  std::list<Actor *> actorsOfTypeAt(ActorType actor_type, int x, int y);
+  void updatePositionInGrid(Actor *actor, Coordinate to_coord);
+  std::list<Actor *> actorsOfTypesAt(std::vector<ActorType> actor_types,
+                                     Coordinate to_coord);
+  std::list<Actor *> actorsOfTypeAt(ActorType actor_type, Coordinate coord);
   void addActor(Actor *actor);
   void updateScoreboard(int colony);
   std::list<int> getLeaders();
@@ -33,8 +48,7 @@ class StudentWorld : public GameWorld {
  private:
   Compiler *handleNewCompiler(int colony);
 
-  std::vector<Actor *> actors_;
-  std::list<Actor *> actors_map_[VIEW_WIDTH][VIEW_HEIGHT];
+  std::map<Coordinate, std::list<Actor*>> actors_;
   int ticks_;
   int scoreboard_[4];
   std::string scoreboard_names_[4];
