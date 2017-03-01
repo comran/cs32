@@ -1,5 +1,6 @@
 #include <string>
 #include <sstream>
+#include <iomanip>
 
 #include "Actor.h"
 #include "StudentWorld.h"
@@ -21,6 +22,7 @@ int StudentWorld::init() {
   Field f;
 
   string fieldFile = getFieldFilename();
+  std::vector<std::string> file_names = getFilenamesOfAntPrograms();
 
   string error;
   if (f.loadField(fieldFile, error) != Field::LoadResult::load_success) {
@@ -28,24 +30,52 @@ int StudentWorld::init() {
     return GWSTATUS_LEVEL_ERROR;
   }
 
+  Compiler *compiler[4];
+  for (int i = 0; i < 4; i++) {
+    compiler[i] = new Compiler();
+    if (!compiler[i]->compile(file_names[i], error)) {
+      setError(file_names[i] + " " + error);
+      return GWSTATUS_LEVEL_ERROR;
+    }
+    scoreboard_names_[i] = compiler[i]->getColonyName();
+  }
+
   for (int x = 0; x < VIEW_WIDTH; x++) {
     for (int y = 0; y < VIEW_HEIGHT; y++) {
       Field::FieldItem item = f.getContentsOf(x, y);
 
-      Actor *new_actor = nullptr;
       if (item == Field::FieldItem::rock) {
-        new_actor = new Pebble(*this, x, y);
+        addActor(new Pebble(*this, x, y));
       } else if (item == Field::FieldItem::grasshopper) {
-        new_actor = new BabyGrasshopper(*this, x, y);
+        addActor(new BabyGrasshopper(*this, x, y));
       } else if (item == Field::FieldItem::poison) {
-        new_actor = new Poison(*this, x, y);
+        addActor(new Poison(*this, x, y));
       } else if (item == Field::FieldItem::water) {
-        new_actor = new WaterPool(*this, x, y);
-      }
+        addActor(new WaterPool(*this, x, y));
+      } else if (item == Field::FieldItem::food) {
+        addActor(new Food(*this, x, y, 6000));
+      } else if (item == Field::FieldItem::anthill0 ||
+                 item == Field::FieldItem::anthill1 ||
+                 item == Field::FieldItem::anthill2 ||
+                 item == Field::FieldItem::anthill3) {
+        int colony = 0;
+        switch (item) {
+          case Field::FieldItem::anthill0:
+            break;
+          case Field::FieldItem::anthill1:
+            colony = 1;
+            break;
+          case Field::FieldItem::anthill2:
+            colony = 2;
+            break;
+          case Field::FieldItem::anthill3:
+            colony = 3;
+            break;
+          default:
+            std::cerr << "UNKNOWN COLONY #: " << colony << std::endl;
+        }
 
-      if (new_actor != nullptr) {
-        actors_.push_back(new_actor);
-        actors_map_[x][y].push_back(new_actor);
+        addActor(new AntHill(*this, colony, x, y, compiler[colony]));
       }
     }
   }
@@ -72,10 +102,23 @@ int StudentWorld::move() {
   updateGameStatText();
 
   for (int i = 0; i < actors_.size(); i++) {
-    if (!actors_[i]->dead()) actors_[i]->doSomething();
+    if (!actors_[i]->dead()) {
+      actors_[i]->doSomething();
+    } else {
+      int x = actors_[i]->getX(), y = actors_[i]->getY();
+      actors_map_[x][y].remove(actors_[i]);
+      delete actors_[i];
+      actors_.erase(actors_.begin() + i);
+    }
   }
 
-  if (++ticks_ > 2000) return GWSTATUS_NO_WINNER;
+  if (++ticks_ > 2000) {
+    std::list<int> leaders = getLeaders();
+    if(leaders.size() > 1) return GWSTATUS_NO_WINNER;
+    setWinner(scoreboard_names_[*leaders.begin()]);
+
+    return GWSTATUS_PLAYER_WON;
+  }
   return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -95,9 +138,43 @@ void StudentWorld::addFood(int x, int y, int food_points) {
   food_actor->changePoints(food_points);
 }
 
+void StudentWorld::addPheromone(int x, int y, int pheromone_points,
+                                ActorType actor_type) {
+  Actor *pheromone_actor = nullptr;
+  std::list<Actor *> pheromone_at_point = actorsOfTypeAt(actor_type, x, y);
+
+  if (pheromone_at_point.size() > 0)
+    pheromone_actor = *pheromone_at_point.begin();
+
+  if (pheromone_actor == nullptr) {
+    Actor *new_actor = new Pheromone(*this, x, y, pheromone_points);
+    actors_.push_back(new_actor);
+    actors_map_[x][y].push_back(new_actor);
+    return;
+  }
+
+  int extra = std::min(0, 768 - pheromone_points);
+  pheromone_actor->changePoints(pheromone_points - extra);
+}
+
 void StudentWorld::updateGameStatText() {
+  std::list<int> leaders = getLeaders();
+
   stringstream ticker_stream;
-  ticker_stream << "Ticks: " << ticks_;
+  ticker_stream << "Ticks: " << std::right << std::setw(5) << ticks_ << " -";
+  for (int i = 0; i < 4; i++) {
+    ticker_stream << "  " << scoreboard_names_[i];
+
+    for (std::list<int>::const_iterator j = leaders.begin();
+         j != leaders.end(); j++) {
+      if(i == *j) {
+        ticker_stream << "*";
+        break;
+      }
+    }
+
+    ticker_stream << ": " << std::setw(2) << std::setfill('0') << scoreboard_[i];
+  }
   setGameStatText(ticker_stream.str());
 }
 
@@ -121,4 +198,46 @@ std::list<Actor *> StudentWorld::actorsOfTypeAt(ActorType actor_type, int x,
   }
 
   return actors_of_type;
+}
+
+std::list<Actor *> StudentWorld::actorsOfTypesAt(
+    std::vector<ActorType> actor_types, int x, int y) {
+  std::list<Actor *> actors_of_types;
+
+  for (int i = 0; i < actor_types.size(); i++) {
+    std::list<Actor *> actors_of_type = actorsOfTypeAt(actor_types[i], x, y);
+    actors_of_types.insert(actors_of_types.end(), actors_of_type.begin(),
+                           actors_of_type.end());
+  }
+
+  return actors_of_types;
+}
+
+void StudentWorld::addActor(Actor *actor) {
+  actors_.push_back(actor);
+  actors_map_[actor->getX()][actor->getY()].push_back(actor);
+}
+
+void StudentWorld::updateScoreboard(int colony) {
+  if (colony < 0 || colony > 3) {
+    std::cerr << "INVALID COLONY: " << colony << std::endl;
+    colony = 0;
+  }
+
+  scoreboard_[colony]++;
+}
+
+std::list<int> StudentWorld::getLeaders() {
+  std::list<int> leaders;
+  leaders.push_back(0);
+  for(int i = 1;i < 4;i++) {
+    if(scoreboard_[i] > scoreboard_[*leaders.begin()]) {
+      leaders.clear();
+      leaders.push_back(i);
+    } else if(scoreboard_[i] == scoreboard_[*leaders.begin()]) {
+      leaders.push_back(i);
+    }
+  }
+
+  return leaders;
 }
