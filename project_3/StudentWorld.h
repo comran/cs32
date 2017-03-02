@@ -47,10 +47,11 @@ class StudentWorld : public GameWorld {
  private:
   Compiler *handleNewCompiler(int colony);
   std::map<Coordinate, std::list<Actor*>> actors_;
+  std::string scoreboard_names_[4];
   int ticks_;
   int scoreboard_[4];
-  std::string scoreboard_names_[4];
   int leader_;
+  int ant_hills_on_field_;
 };
 
 #endif  // STUDENTWORLD_H_

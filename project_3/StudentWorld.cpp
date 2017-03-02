@@ -43,7 +43,7 @@ Coordinate Coordinate::coordInDirection(GraphObject::Direction direction) {
 }
 
 StudentWorld::StudentWorld(std::string assetDir)
-    : GameWorld(assetDir), ticks_(0), leader_(-1) {}
+    : GameWorld(assetDir), ticks_(0), leader_(-1), scoreboard_{0, 0, 0, 0}, ant_hills_on_field_(0){}
 
 StudentWorld::~StudentWorld() { cleanUp(); }
 
@@ -54,6 +54,7 @@ int StudentWorld::init() {
 
   string fieldFile = getFieldFilename();
   std::vector<std::string> file_names = getFilenamesOfAntPrograms();
+  ant_hills_on_field_ = file_names.size();
 
   string error;
   if (f.loadField(fieldFile, error) != Field::LoadResult::load_success) {
@@ -62,7 +63,7 @@ int StudentWorld::init() {
   }
 
   Compiler *compiler[4];
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < file_names.size(); i++) {
     compiler[i] = new Compiler();
     if (!compiler[i]->compile(file_names[i], error)) {
       setError(file_names[i] + " " + error);
@@ -106,6 +107,7 @@ int StudentWorld::init() {
           default:
             std::cerr << "UNKNOWN COLONY #: " << colony << std::endl;
         }
+        if(colony >= ant_hills_on_field_) continue;
 
         addActor(new AntHill(*this, colony, coord, compiler[colony]));
       }
@@ -198,7 +200,7 @@ void StudentWorld::addPheromone(Coordinate coord, int pheromone_points,
 void StudentWorld::updateGameStatText() {
   stringstream ticker_stream;
   ticker_stream << "Ticks: " << std::right << std::setw(5) << ticks_ << " - ";
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < ant_hills_on_field_; i++) {
     if (i > 0) ticker_stream << "  ";
     ticker_stream << scoreboard_names_[i];
 

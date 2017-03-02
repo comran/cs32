@@ -31,21 +31,22 @@ class Actor : public GraphObject {
  public:
   Actor(StudentWorld &student_world, ActorType actor_type, int iid,
         Coordinate coord, Actor::Direction dir, int depth, int initial_points);
+  Coordinate getCoord() const;
+  Actor::Direction randomDirection() const;
+  StudentWorld &getStudentWorld() const;
+  ActorType getActorType() const;
+  bool checkForObjectMatch(ActorType type) const;
+  int getPoints() const;
+  void moveTo(Coordinate coord);
+  void changePoints(int delta);
+
   virtual void doSomething() = 0;
   virtual void poison();
   virtual void stun();
   virtual void feed(int &available_food);
   virtual void die();
   virtual void bite(Actor* bit_by, int damage);
-  Coordinate getCoord();
-  bool dead();
-  void moveTo(Coordinate coord);
-  bool checkForObjectMatch(ActorType type);
-  ActorType getActorType();
-  int getPoints();
-  void changePoints(int delta);
-  Actor::Direction randomDirection();
-  StudentWorld &getStudentWorld();
+  virtual bool dead();
 
  private:
   ActorType actor_type_;

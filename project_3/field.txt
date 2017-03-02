@@ -60,5 +60,5 @@
 * f  f *  f w*    **                        **    *w f  * f  f *
 * f            p         w   *    *   w         p            f *
 * ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff *
-*         g  w *  pf w                    w fp  * w  g         *
+***       g  w *  pf w                    w fp  * w  g         *
 ****************************************************************

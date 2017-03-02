@@ -14,25 +14,20 @@ Actor::Actor(StudentWorld &student_world, ActorType actor_type, int iid,
       student_world_(student_world),
       dead_(false),
       points_(initial_points) {}
-void Actor::poison() {}
-void Actor::stun() {}
-bool Actor::dead() { return dead_; }
-void Actor::die() { dead_ = true; }
-void Actor::feed(int &available_food) {}
-void Actor::bite(Actor *bit_by, int damage) {}
-Coordinate Actor::getCoord() { return Coordinate(getX(), getY()); }
-int Actor::getPoints() { return points_; };
+ActorType Actor::getActorType() const { return actor_type_; }
+int Actor::getPoints() const { return points_; };
+StudentWorld &Actor::getStudentWorld() const { return student_world_; }
+Coordinate Actor::getCoord() const { return Coordinate(getX(), getY()); }
+bool Actor::checkForObjectMatch(ActorType type) const {
+  return actor_type_ == type;
+}
+Actor::Direction Actor::randomDirection() const {
+  return static_cast<Actor::Direction>(randInt(1, 4));
+}
 void Actor::changePoints(int delta) {
   points_ += delta;
   if (getPoints() < 1) die();
 }
-bool Actor::checkForObjectMatch(ActorType type) { return actor_type_ == type; }
-ActorType Actor::getActorType() { return actor_type_; }
-StudentWorld &Actor::getStudentWorld() { return student_world_; }
-Actor::Direction Actor::randomDirection() {
-  return static_cast<Actor::Direction>(randInt(1, 4));
-}
-
 void Actor::moveTo(Coordinate coord) {
   // Cap X and Y within bounds.
   coord.setX(std::max(0, coord.getX()));
@@ -42,6 +37,14 @@ void Actor::moveTo(Coordinate coord) {
 
   student_world_.updatePositionInGrid(this, coord);
 }
+
+
+void Actor::poison() {}
+void Actor::stun() {}
+bool Actor::dead() { return dead_; }
+void Actor::die() { dead_ = true; }
+void Actor::feed(int &available_food) {}
+void Actor::bite(Actor *bit_by, int damage) {}
 
 // //////////////////////// OBJECT CLASSES /////////////////////////////////////
 Food::Food(StudentWorld &student_world, Coordinate coord, int food_points)
@@ -434,6 +437,7 @@ bool Ant::runCommand(const Compiler::Command &c) {
       return false;
     }
     case Compiler::label:
+      std::cout << "LABEL: " << c.operand1 << " - " << c.operand2 << std::endl;
       // TODO(comran): Implement.
       return false;
     case Compiler::bite: {
@@ -556,13 +560,14 @@ void AdultGrasshopper::doSomething() {
 
   std::list<Actor *> actors_at_point =
       getStudentWorld().actorsOfTypesAt(enemy_insects_, getCoord());
-  if (actors_at_point.size() > 0 && randInt(0, 2) == 0) {  // 1 in 3 chance.
+
+  if (actors_at_point.size() > 1 && randInt(0, 2) == 0) {  // 1 in 3 chance.
     int rand_index = randInt(0, actors_at_point.size() - 1);
     std::list<Actor *>::const_iterator i = actors_at_point.begin();
-
-    for (int j = 0; j < rand_index; j++) i++;
-
-    (*i)->bite(this, 50);
+    if(*i != this) {
+      for (int j = 0; j < rand_index; j++) i++;
+      (*i)->bite(this, 50);
+    }
   } else if (randInt(0, 9) == 0) {
     Coordinate jump_to_coord(0, 0);
     int give_up = 0;
