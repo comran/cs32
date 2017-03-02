@@ -4,3 +4,18 @@
 ==2062==      possibly lost: 8,191,680 bytes in 22 blocks
 ==2062==    still reachable: 126,340 bytes in 1,066 blocks
 ==2062==         suppressed: 0 bytes in 0 blocks
+
+after 5
+definitely lost: 336 bytes in 6 blocks
+==20602==    indirectly lost: 20,624 bytes in 361 blocks
+==20602==      possibly lost: 8,192,688 bytes in 25 blocks
+==20602==    still reachable: 151,281 bytes in 1,416 blocks
+==20602==         suppressed: 0 bytes in 0 blocks
+
+after 25
+==20888== LEAK SUMMARY:
+==20888==    definitely lost: 304 bytes in 6 blocks
+==20888==    indirectly lost: 20,656 bytes in 361 blocks
+==20888==      possibly lost: 8,192,688 bytes in 25 blocks
+==20888==    still reachable: 151,281 bytes in 1,416 blocks
+==20888==         suppressed: 0 bytes in 0 blocks

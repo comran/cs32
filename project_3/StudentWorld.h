@@ -35,7 +35,7 @@ class StudentWorld : public GameWorld {
   virtual void cleanUp();
   void addFood(Coordinate coord, int food_points);
   void addPheromone(Coordinate coord, int pheromone_points,
-                    ActorType actor_type);
+                    int colony);
   void updateGameStatText();
   void updatePositionInGrid(Actor *actor, Coordinate to_coord);
   std::list<Actor *> actorsOfTypesAt(std::vector<ActorType> actor_types,
@@ -43,15 +43,14 @@ class StudentWorld : public GameWorld {
   std::list<Actor *> actorsOfTypeAt(ActorType actor_type, Coordinate coord);
   void addActor(Actor *actor);
   void updateScoreboard(int colony);
-  std::list<int> getLeaders();
 
  private:
   Compiler *handleNewCompiler(int colony);
-
   std::map<Coordinate, std::list<Actor*>> actors_;
   int ticks_;
   int scoreboard_[4];
   std::string scoreboard_names_[4];
+  int leader_;
 };
 
 #endif  // STUDENTWORLD_H_

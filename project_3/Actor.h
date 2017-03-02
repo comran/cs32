@@ -19,20 +19,24 @@ enum class ActorType {
   PHEROMONE1,
   PHEROMONE2,
   PHEROMONE3,
-  ANT_HILL
+  ANT_HILL0,
+  ANT_HILL1,
+  ANT_HILL2,
+  ANT_HILL3
 };
 class StudentWorld;
 
 // ////////////////////////// BASE CLASS //////////////////////////////////////
 class Actor : public GraphObject {
  public:
-  Actor(StudentWorld &student_world, ActorType actor_type, int iid, Coordinate coord, Actor::Direction dir, int depth, int initial_points);
+  Actor(StudentWorld &student_world, ActorType actor_type, int iid,
+        Coordinate coord, Actor::Direction dir, int depth, int initial_points);
   virtual void doSomething() = 0;
   virtual void poison();
   virtual void stun();
   virtual void feed(int &available_food);
   virtual void die();
-  virtual void bite();
+  virtual void bite(Actor* bit_by, int damage);
   Coordinate getCoord();
   bool dead();
   void moveTo(Coordinate coord);
@@ -55,7 +59,7 @@ class Food : public Actor {
  public:
   Food(StudentWorld &student_world, Coordinate coord, int food_points);
   void doSomething();
-  void increaseFood(int food_points);
+  void changePoints(int delta);
 };
 
 class Pebble : public Actor {
@@ -83,7 +87,7 @@ class Pheromone : public Actor {
   static ActorType getActorType(int colony);
 
  private:
-  int getImageForColony(int colony);
+  static int getImageForColony(int colony);
 };
 
 class AntHill : public Actor {
@@ -91,12 +95,12 @@ class AntHill : public Actor {
   AntHill(StudentWorld &student_world, int colony, Coordinate coord,
           Compiler *compiler);
   void doSomething();
+  static ActorType getActorTypeFromColony(int colony);
 
  private:
   void giveBirth();
   Compiler *compiler_;
   int colony_;
-  int food_eaten_;
 };
 
 // //////////////////////// INSECT CLASSES /////////////////////////////////////
@@ -110,6 +114,9 @@ class Insect : public Actor {
   void resetStunned();
   void addSleep(int sleep);
   bool sleep();
+  void poison();
+  bool eatFood(int max_food);
+  virtual void bite(Actor* actor, int damage);
 
  private:
   bool moved_from_stunned_point_;
@@ -118,16 +125,16 @@ class Insect : public Actor {
 
 class Ant : public Insect {
  public:
-  Ant(StudentWorld &student_world, int colony, Coordinate coord, Compiler *compiler,
-      AntHill &my_anthill);
+  Ant(StudentWorld &student_world, int colony, Coordinate coord,
+      Compiler *compiler, AntHill &my_anthill);
   void doSomething();
+  virtual void bite(Actor* actor, int damage);
   static ActorType getActorTypeFromColony(int colony);
   static int getColonyFromActorType(ActorType actor_type);
-  virtual void bite();
 
  private:
   bool runCommand(const Compiler::Command &c);
-  int getImageForColony(int colony);
+  static int getImageForColony(int colony);
   Compiler *compiler_;
   int instruction_counter_;
   bool blocked_by_pebble_;
@@ -140,7 +147,8 @@ class Ant : public Insect {
 
 class Grasshopper : public Insect {
  public:
-  Grasshopper(StudentWorld &student_world, int iid, Coordinate coord, int points);
+  Grasshopper(StudentWorld &student_world, int iid, Coordinate coord,
+              int points);
   void randomMovement();
   void feed(int &availableFood);
 
@@ -152,7 +160,6 @@ class BabyGrasshopper : public Grasshopper {
  public:
   BabyGrasshopper(StudentWorld &student_world, Coordinate coord);
   void doSomething();
-  void poison();
 };
 
 class AdultGrasshopper : public Grasshopper {
@@ -160,6 +167,11 @@ class AdultGrasshopper : public Grasshopper {
   AdultGrasshopper(StudentWorld &student_world, Coordinate coord);
   void doSomething();
   void stun();
+  void poison();
+  void bite(Actor* bit_by, int damage);
+
+ private:
+  std::vector<ActorType> enemy_insects_;
 };
 
 #endif  // ACTOR_H_

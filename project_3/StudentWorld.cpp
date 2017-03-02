@@ -43,7 +43,7 @@ Coordinate Coordinate::coordInDirection(GraphObject::Direction direction) {
 }
 
 StudentWorld::StudentWorld(std::string assetDir)
-    : GameWorld(assetDir), ticks_(0) {}
+    : GameWorld(assetDir), ticks_(0), leader_(-1) {}
 
 StudentWorld::~StudentWorld() { cleanUp(); }
 
@@ -135,8 +135,8 @@ int StudentWorld::move() {
     i->second.remove(nullptr);
 
     int original_size = i->second.size(), k = 0;
-    for (std::list<Actor *>::iterator j = i->second.begin();
-         k < original_size; j++, k++) {
+    for (std::list<Actor *>::iterator j = i->second.begin(); k < original_size;
+         j++, k++) {
       if (*j == nullptr) continue;
       if (!(*j)->dead()) {
         (*j)->doSomething();
@@ -146,21 +146,20 @@ int StudentWorld::move() {
       }
     }
 
-    if(i->second.size() < 1) actors_.erase(i);
+    if (i->second.size() < 1) actors_.erase(i);
   }
 
   if (++ticks_ > 2000) {
-    std::list<int> leaders = getLeaders();
-    if (leaders.size() > 1) return GWSTATUS_NO_WINNER;
-    setWinner(scoreboard_names_[*leaders.begin()]);
+    if (leader_ < 0) return GWSTATUS_NO_WINNER;
 
+    setWinner(scoreboard_names_[leader_]);
     return GWSTATUS_PLAYER_WON;
   }
+
   return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::addFood(Coordinate coord, int food_points) {
-  std::cout << "ADD FOOD\n";
   Actor *food_actor = nullptr;
   std::list<Actor *> food_at_point = actorsOfTypeAt(ActorType::FOOD, coord);
 
@@ -176,37 +175,35 @@ void StudentWorld::addFood(Coordinate coord, int food_points) {
 }
 
 void StudentWorld::addPheromone(Coordinate coord, int pheromone_points,
-                                ActorType actor_type) {
+                                int colony) {
   Actor *pheromone_actor = nullptr;
-  std::list<Actor *> pheromone_at_point = actorsOfTypeAt(actor_type, coord);
+  std::list<Actor *> pheromone_at_point =
+      actorsOfTypeAt(Pheromone::getActorType(colony), coord);
 
   if (pheromone_at_point.size() > 0)
     pheromone_actor = *pheromone_at_point.begin();
 
   if (pheromone_actor == nullptr) {
-    Actor *new_actor = new Pheromone(*this, coord, pheromone_points);
+    Actor *new_actor = new Pheromone(*this, coord, colony);
     addActor(new_actor);
     return;
   }
 
-  int extra = std::min(0, 768 - pheromone_points);
-  pheromone_actor->changePoints(pheromone_points - extra);
+  pheromone_points =
+      std::min(pheromone_points, 768 - pheromone_actor->getPoints());
+  pheromone_points = std::max(0, pheromone_points);
+  pheromone_actor->changePoints(pheromone_points);
 }
 
 void StudentWorld::updateGameStatText() {
-  std::list<int> leaders = getLeaders();
-
   stringstream ticker_stream;
-  ticker_stream << "Ticks: " << std::right << std::setw(5) << ticks_ << " -";
+  ticker_stream << "Ticks: " << std::right << std::setw(5) << ticks_ << " - ";
   for (int i = 0; i < 4; i++) {
-    ticker_stream << "  " << scoreboard_names_[i];
+    if (i > 0) ticker_stream << "  ";
+    ticker_stream << scoreboard_names_[i];
 
-    for (std::list<int>::const_iterator j = leaders.begin(); j != leaders.end();
-         j++) {
-      if (i == *j) {
-        ticker_stream << "*";
-        break;
-      }
+    if (leader_ == i) {
+      ticker_stream << "*";
     }
 
     ticker_stream << ": " << std::setw(2) << std::setfill('0')
@@ -222,7 +219,7 @@ std::list<Actor *> StudentWorld::actorsOfTypeAt(ActorType actor_type,
   std::list<Actor *> actors_at_point = actors_[coord];
   for (std::list<Actor *>::const_iterator i = actors_at_point.begin();
        i != actors_at_point.end(); i++) {
-    if(*i == nullptr) continue;
+    if (*i == nullptr) continue;
     if ((*i)->checkForObjectMatch(actor_type)) actors_of_type.push_back(*i);
   }
 
@@ -272,19 +269,10 @@ void StudentWorld::updateScoreboard(int colony) {
   }
 
   scoreboard_[colony]++;
-}
-
-std::list<int> StudentWorld::getLeaders() {
-  std::list<int> leaders;
-  leaders.push_back(0);
-  for (int i = 1; i < 4; i++) {
-    if (scoreboard_[i] > scoreboard_[*leaders.begin()]) {
-      leaders.clear();
-      leaders.push_back(i);
-    } else if (scoreboard_[i] == scoreboard_[*leaders.begin()]) {
-      leaders.push_back(i);
-    }
+  if (leader_ < 0 && scoreboard_[colony] > 5) {
+    leader_ = colony;
   }
 
-  return leaders;
+  if (scoreboard_[colony] > scoreboard_[leader_] && scoreboard_[colony] > 5)
+    leader_ = colony;
 }

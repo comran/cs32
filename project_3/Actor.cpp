@@ -1,14 +1,14 @@
 #include <algorithm>
+#include <cmath>
 
 #include "Actor.h"
 #include "StudentWorld.h"
 #include "GameConstants.h"
 
-// TODO(comran): Finish adult grasshopper.
-// TODO(comran): Finish ant class.
-
 // ////////////////////////// BASE CLASS ///////////////////////////////////////
-Actor::Actor(StudentWorld &student_world, ActorType actor_type, int iid, Coordinate coord, Actor::Direction dir, int depth, int initial_points)
+Actor::Actor(StudentWorld &student_world, ActorType actor_type, int iid,
+             Coordinate coord, Actor::Direction dir, int depth,
+             int initial_points)
     : GraphObject(iid, coord.getX(), coord.getY(), dir, depth),
       actor_type_(actor_type),
       student_world_(student_world),
@@ -19,10 +19,13 @@ void Actor::stun() {}
 bool Actor::dead() { return dead_; }
 void Actor::die() { dead_ = true; }
 void Actor::feed(int &available_food) {}
-void Actor::bite() {}
+void Actor::bite(Actor *bit_by, int damage) {}
 Coordinate Actor::getCoord() { return Coordinate(getX(), getY()); }
 int Actor::getPoints() { return points_; };
-void Actor::changePoints(int delta) { points_ += delta; }
+void Actor::changePoints(int delta) {
+  points_ += delta;
+  if (getPoints() < 1) die();
+}
 bool Actor::checkForObjectMatch(ActorType type) { return actor_type_ == type; }
 ActorType Actor::getActorType() { return actor_type_; }
 StudentWorld &Actor::getStudentWorld() { return student_world_; }
@@ -31,6 +34,12 @@ Actor::Direction Actor::randomDirection() {
 }
 
 void Actor::moveTo(Coordinate coord) {
+  // Cap X and Y within bounds.
+  coord.setX(std::max(0, coord.getX()));
+  coord.setX(std::min(VIEW_WIDTH, coord.getX()));
+  coord.setY(std::max(0, coord.getY()));
+  coord.setY(std::min(VIEW_HEIGHT, coord.getY()));
+
   student_world_.updatePositionInGrid(this, coord);
 }
 
@@ -38,36 +47,35 @@ void Actor::moveTo(Coordinate coord) {
 Food::Food(StudentWorld &student_world, Coordinate coord, int food_points)
     : Actor(student_world, ActorType::FOOD, IID_FOOD, coord, right, 2,
             food_points) {}
-void Food::increaseFood(int food_points) { changePoints(food_points); }
-void Food::doSomething() {
+
+void Food::changePoints(int delta) {
+  Actor::changePoints(delta);
+
   if (getPoints() <= 0) {
+    die();
     setVisible(false);
-    return;
-  }
-  setVisible(true);
-
-  std::list<Actor *> insects_at_point =
-      getStudentWorld().actorsOfTypeAt(ActorType::GRASSHOPPER, Coordinate(getX(), getY()));
-  for (std::list<Actor *>::const_iterator i = insects_at_point.begin();
-       i != insects_at_point.end(); i++) {
-    if ((*i)->dead()) continue;
-
-    int food_available = getPoints();
-    (*i)->feed(food_available);
-    changePoints(food_available - getPoints());
   }
 }
 
+void Food::doSomething() {}
+
 Pebble::Pebble(StudentWorld &student_world, Coordinate coord)
-    : Actor(student_world, ActorType::PEBBLE, IID_ROCK, coord, right, 1, 0) {}
+    : Actor(student_world, ActorType::PEBBLE, IID_ROCK, coord, right, 1, 1) {}
 void Pebble::doSomething() {}
 
 Poison::Poison(StudentWorld &student_world, Coordinate coord)
-    : Actor(student_world, ActorType::POISON, IID_POISON, coord, right, 2, 0) {}
+    : Actor(student_world, ActorType::POISON, IID_POISON, coord, right, 2, 1) {}
 
 void Poison::doSomething() {
+  std::vector<ActorType> insects;
+  insects.push_back(ActorType::GRASSHOPPER);
+  for (int i = 0; i < 4; i++) {
+    insects.push_back(Ant::getActorTypeFromColony(i));
+  }
+
   std::list<Actor *> insects_at_point =
-      getStudentWorld().actorsOfTypeAt(ActorType::GRASSHOPPER, Coordinate(getX(), getY()));
+      getStudentWorld().actorsOfTypesAt(insects, getCoord());
+
   for (std::list<Actor *>::const_iterator i = insects_at_point.begin();
        i != insects_at_point.end(); i++) {
     if ((*i)->dead()) continue;
@@ -77,11 +85,16 @@ void Poison::doSomething() {
 
 WaterPool::WaterPool(StudentWorld &student_world, Coordinate coord)
     : Actor(student_world, ActorType::WATER_POOL, IID_WATER_POOL, coord, right,
-            2, 0) {}
+            2, 1) {}
 
 void WaterPool::doSomething() {
+  std::vector<ActorType> insects;
+  for (int i = 0; i < 4; i++) {
+    insects.push_back(Ant::getActorTypeFromColony(i));
+  }
+
   std::list<Actor *> insects_at_point =
-      getStudentWorld().actorsOfTypeAt(ActorType::GRASSHOPPER, Coordinate(getX(), getY()));
+      getStudentWorld().actorsOfTypesAt(insects, getCoord());
   for (std::list<Actor *>::const_iterator i = insects_at_point.begin();
        i != insects_at_point.end(); i++) {
     if ((*i)->dead()) continue;
@@ -90,7 +103,8 @@ void WaterPool::doSomething() {
 }
 
 Pheromone::Pheromone(StudentWorld &student_world, Coordinate coord, int colony)
-    : Actor(student_world, getActorType(colony), getImageForColony(colony), coord, right, 2, 256) {}
+    : Actor(student_world, getActorType(colony), getImageForColony(colony),
+            coord, right, 2, 256) {}
 
 void Pheromone::doSomething() {
   changePoints(-1);
@@ -98,46 +112,25 @@ void Pheromone::doSomething() {
 }
 
 ActorType Pheromone::getActorType(int colony) {
-  switch (colony) {
-    case 0:
-      break;
-    case 1:
-      return ActorType::PHEROMONE1;
-    case 2:
-      return ActorType::PHEROMONE2;
-    case 3:
-      return ActorType::PHEROMONE3;
-    default:
-      std::cerr << "UNKNOWN COLONY #: " << colony << std::endl;
-  }
+  ActorType pheromone_actor_types[] = {
+      ActorType::PHEROMONE0, ActorType::PHEROMONE1, ActorType::PHEROMONE2,
+      ActorType::PHEROMONE3};
 
-  return ActorType::PHEROMONE0;
+  return pheromone_actor_types[colony];
 }
 
 int Pheromone::getImageForColony(int colony) {
-  switch (colony) {
-    case 0:
-      break;
-    case 1:
-      return IID_PHEROMONE_TYPE1;
-    case 2:
-      return IID_PHEROMONE_TYPE2;
-    case 3:
-      return IID_PHEROMONE_TYPE3;
-    default:
-      std::cerr << "UNKNOWN COLONY #: " << colony << std::endl;
-  }
-
-  return IID_PHEROMONE_TYPE0;
+  int pheromone_iids[] = {IID_PHEROMONE_TYPE0, IID_PHEROMONE_TYPE1,
+                          IID_PHEROMONE_TYPE2, IID_PHEROMONE_TYPE3};
+  return pheromone_iids[colony];
 }
 
 AntHill::AntHill(StudentWorld &student_world, int colony, Coordinate coord,
                  Compiler *compiler)
-    : Actor(student_world, ActorType::ANT_HILL, IID_ANT_HILL, coord, right, 2,
-            8999),
+    : Actor(student_world, getActorTypeFromColony(colony), IID_ANT_HILL, coord,
+            right, 2, 8999),
       compiler_(compiler),
-      colony_(colony),
-      food_eaten_(0) {}
+      colony_(colony) {}
 
 void AntHill::doSomething() {
   changePoints(-1);
@@ -148,29 +141,33 @@ void AntHill::doSomething() {
 
   // Eat food at this square, up to 10000.
   std::list<Actor *> food_at_point =
-      getStudentWorld().actorsOfTypeAt(ActorType::FOOD, Coordinate(getX(), getY()));
+      getStudentWorld().actorsOfTypeAt(ActorType::FOOD, getCoord());
   for (std::list<Actor *>::const_iterator i = food_at_point.begin();
        i != food_at_point.end(); i++) {
-    int food_available = (*i)->getPoints();
-    food_available = std::min(food_available, 10000 - food_eaten_);
+    int food_available = std::min((*i)->getPoints(), 10000);
     changePoints(food_available);
-    food_eaten_ += food_available;
     (*i)->changePoints(-1 * food_available);
 
-    return;
+    break;
   }
 
   if (getPoints() >= 2000) {
     giveBirth();
     changePoints(-1500);
-    // TODO(comran): Tell student world to increase # of ants for this colony.
   }
 }
 
 void AntHill::giveBirth() {
   getStudentWorld().addActor(
-      new Ant(getStudentWorld(), colony_, Coordinate(getX(), getY()), compiler_, *this));
+      new Ant(getStudentWorld(), colony_, getCoord(), compiler_, *this));
   getStudentWorld().updateScoreboard(colony_);
+}
+
+ActorType AntHill::getActorTypeFromColony(int colony) {
+  ActorType ant_hill_colony_to_actor_type[] = {
+      ActorType::ANT_HILL0, ActorType::ANT_HILL1, ActorType::ANT_HILL2,
+      ActorType::ANT_HILL3};
+  return ant_hill_colony_to_actor_type[colony];
 }
 
 // //////////////////////// INSECT CLASSES /////////////////////////////////////
@@ -182,7 +179,7 @@ Insect::Insect(StudentWorld &student_world, int iid, Coordinate coord,
       moved_from_stunned_point_(true) {}
 
 void Insect::die() {
-  getStudentWorld().addFood(Coordinate(getX(), getY()), 100);
+  getStudentWorld().addFood(getCoord(), 100);
   Actor::die();
   setVisible(false);
 }
@@ -201,6 +198,26 @@ bool Insect::sleep() {
   if (sleep_ticks_ > 0) {
     sleep_ticks_--;
     return true;
+  }
+
+  return false;
+}
+
+void Insect::bite(Actor *actor, int damage) { changePoints(-1 * damage); }
+void Insect::poison() { changePoints(-150); }
+bool Insect::eatFood(int max_food) {
+  std::list<Actor *> food_at_point =
+      getStudentWorld().actorsOfTypeAt(ActorType::FOOD, getCoord());
+
+  for (std::list<Actor *>::const_iterator i = food_at_point.begin();
+       i != food_at_point.end(); i++) {
+    if ((*i)->getPoints() < 1) continue;
+
+    int food_available = (*i)->getPoints();
+    food_available = std::min(food_available, max_food);
+    (*i)->changePoints(-1 * food_available);
+    feed(food_available);
+    if (food_available > 0) return true;
   }
 
   return false;
@@ -241,47 +258,28 @@ void Ant::doSomething() {
   if (sleep()) return;
 
   Compiler::Command command;
+  int commands_this_tick = 0;
   do {
     if (!compiler_->getCommand(instruction_counter_++, command)) {
       die();
       return;
     }
-
-  } while (runCommand(command));
+  } while (runCommand(command) && ++commands_this_tick < 10);
 }
 
 ActorType Ant::getActorTypeFromColony(int colony) {
-  switch (colony) {
-    case 0:
-      break;
-    case 1:
-      return ActorType::ANT1;
-    case 2:
-      return ActorType::ANT2;
-    case 3:
-      return ActorType::ANT3;
-    default:
-      std::cerr << "UNKNOWN COLONY #: " << colony << std::endl;
-  }
-
-  return ActorType::ANT0;
+  ActorType ant_colony_to_actor_type[] = {ActorType::ANT0, ActorType::ANT1,
+                                          ActorType::ANT2, ActorType::ANT3};
+  return ant_colony_to_actor_type[colony];
 }
 
 int Ant::getColonyFromActorType(ActorType actor_type) {
-  switch (actor_type) {
-    case ActorType::ANT0:
-      break;
-    case ActorType::ANT1:
-      return 1;
-    case ActorType::ANT2:
-      return 2;
-    case ActorType::ANT3:
-      return 3;
-    default:
-      std::cerr << "UNKNOWN COLONY ACTOR_TYPE" << std::endl;
-  }
+  std::map<ActorType, int> ant_actor_type_to_colony = {{ActorType::ANT0, 0},
+                                                       {ActorType::ANT1, 1},
+                                                       {ActorType::ANT2, 2},
+                                                       {ActorType::ANT3, 3}};
 
-  return 0;
+  return ant_actor_type_to_colony[actor_type];
 }
 
 bool Ant::runCommand(const Compiler::Command &c) {
@@ -293,13 +291,30 @@ bool Ant::runCommand(const Compiler::Command &c) {
     case Compiler::if_command: {
       switch (stoi(c.operand1)) {
         case Compiler::i_smell_danger_in_front_of_me: {
-          // TODO(comran): Implement the following.
-          // instruction_counter_ = stoi(c.operand2);
+          Coordinate coord_in_front =
+              getCoord().coordInDirection(getDirection());
+
+          std::vector<ActorType> stranger_danger = other_insects_;
+          stranger_danger.push_back(ActorType::WATER_POOL);
+          stranger_danger.push_back(ActorType::POISON);
+
+          if (getStudentWorld()
+                  .actorsOfTypesAt(stranger_danger, coord_in_front)
+                  .size() > 0)
+            instruction_counter_ = stoi(c.operand2);
           break;
         }
         case Compiler::i_smell_pheromone_in_front_of_me: {
-          // TODO(comran): Implement the following.
-          // instruction_counter_ = stoi(c.operand2);
+          Coordinate coord_in_front =
+              getCoord().coordInDirection(getDirection());
+          std::list<Actor *> pheromone = getStudentWorld().actorsOfTypeAt(
+              Pheromone::getActorType(getColonyFromActorType(getActorType())),
+              coord_in_front);
+
+          if (pheromone.size() > 0) {
+            if ((*pheromone.begin())->getPoints() < 1) break;
+            instruction_counter_ = stoi(c.operand2);
+          }
           break;
         }
         case Compiler::i_was_bit: {
@@ -315,23 +330,29 @@ bool Ant::runCommand(const Compiler::Command &c) {
           break;
         }
         case Compiler::i_am_standing_on_my_anthill: {
-          if (my_ant_hill_.getX() == getX() && my_ant_hill_.getY() == getY()) {
-            std::cout << "on my hill\n";
+          std::list<Actor *> anthill = getStudentWorld().actorsOfTypeAt(
+              AntHill::getActorTypeFromColony(
+                  getColonyFromActorType(getActorType())),
+              getCoord());
+          if (anthill.size() > 0) {
+            if ((*anthill.begin())->dead()) break;
+
             instruction_counter_ = stoi(c.operand2);
           }
           break;
         }
         case Compiler::i_am_standing_on_food: {
-          if (getStudentWorld()
-                  .actorsOfTypeAt(ActorType::FOOD, Coordinate(getX(), getY()))
-                  .size() > 0) {
+          std::list<Actor *> food =
+              getStudentWorld().actorsOfTypeAt(ActorType::FOOD, getCoord());
+          if (food.size() > 0) {
+            if ((*food.begin())->getPoints() < 1) break;
             instruction_counter_ = stoi(c.operand2);
           }
           break;
         }
         case Compiler::i_am_standing_with_an_enemy: {
           if (getStudentWorld()
-                  .actorsOfTypesAt(other_insects_, Coordinate(getX(), getY()))
+                  .actorsOfTypesAt(other_insects_, getCoord())
                   .size() > 0) {
             instruction_counter_ = stoi(c.operand2);
           }
@@ -372,16 +393,12 @@ bool Ant::runCommand(const Compiler::Command &c) {
     }
     case Compiler::emitPheromone: {
       getStudentWorld().addPheromone(
-          Coordinate(getX(), getY()), 256, Pheromone::getActorType(getColonyFromActorType(
-                                   Actor::getActorType())));
+          getCoord(), 256, getColonyFromActorType(Actor::getActorType()));
       return false;
     }
     case Compiler::dropFood: {
-      std::cout << "dropping " << food_carried_ << " units of food.\n";
-      getStudentWorld().addFood(Coordinate(getX(), getY()), food_carried_);
+      getStudentWorld().addFood(getCoord(), food_carried_);
       food_carried_ = 0;
-      if (my_ant_hill_.getX() == getX() && my_ant_hill_.getY() == getY())
-        std::cout << "dropping food on my anthill.\n";
       return false;
     }
     case Compiler::moveForward: {
@@ -421,18 +438,19 @@ bool Ant::runCommand(const Compiler::Command &c) {
       return false;
     case Compiler::bite: {
       std::list<Actor *> other_insects_at_point =
-          getStudentWorld().actorsOfTypesAt(other_insects_, Coordinate(getX(), getY()));
+          getStudentWorld().actorsOfTypesAt(other_insects_, getCoord());
+
       for (std::list<Actor *>::const_iterator i =
                other_insects_at_point.begin();
            i != other_insects_at_point.end(); i++) {
-        (*i)->bite();
+        (*i)->bite(this, 15);
       }
 
       return false;
     }
     case Compiler::pickupFood: {
       std::list<Actor *> food_at_point =
-          getStudentWorld().actorsOfTypeAt(ActorType::FOOD, Coordinate(getX(), getY()));
+          getStudentWorld().actorsOfTypeAt(ActorType::FOOD, getCoord());
       if (food_at_point.size() < 1) return false;  // No food at point.
       int held_food = (*food_at_point.begin())->getPoints();
       held_food = std::min(held_food, 400);  // Cap at 400 units per pickup.
@@ -454,27 +472,14 @@ bool Ant::runCommand(const Compiler::Command &c) {
   }
 }
 
-void Ant::bite() {
-  std::cout << "I WAS BIT!\n";
-  was_bit_ = true;
-  changePoints(-15);
+int Ant::getImageForColony(int colony) {
+  int ant_iids[] = {IID_ANT_TYPE0, IID_ANT_TYPE1, IID_ANT_TYPE2, IID_ANT_TYPE3};
+  return ant_iids[colony];
 }
 
-int Ant::getImageForColony(int colony) {
-  switch (colony) {
-    case 1:
-      return IID_ANT_TYPE1;
-    case 2:
-      return IID_ANT_TYPE2;
-    case 3:
-      return IID_ANT_TYPE3;
-    case 0:
-      break;
-    default:
-      std::cerr << "UNKNOWN COLONY #: " << colony << std::endl;
-  }
-
-  return IID_ANT_TYPE0;
+void Ant::bite(Actor *bit_by, int damage) {
+  Insect::bite(bit_by, damage);
+  was_bit_ = true;
 }
 
 Grasshopper::Grasshopper(StudentWorld &student_world, int iid, Coordinate coord,
@@ -513,32 +518,88 @@ BabyGrasshopper::BabyGrasshopper(StudentWorld &student_world, Coordinate coord)
 
 void BabyGrasshopper::doSomething() {
   changePoints(-1);
+
   if (getPoints() <= 0) {
     die();
     return;
   } else if (getPoints() >= 1600) {
     getStudentWorld().addActor(
-        new AdultGrasshopper(getStudentWorld(), Coordinate(getX(), getY())));
+        new AdultGrasshopper(getStudentWorld(), getCoord()));
     die();
   }
 
   if (sleep()) return;
+  if (!(eatFood(200) && randInt(0, 1) == 0)) randomMovement();
 
-  randomMovement();
   addSleep(2);
 }
 
-void BabyGrasshopper::poison() { changePoints(-150); }
-
-AdultGrasshopper::AdultGrasshopper(StudentWorld &student_world, Coordinate coord)
-    : Grasshopper(student_world, IID_ADULT_GRASSHOPPER, coord, 1600) {}
+AdultGrasshopper::AdultGrasshopper(StudentWorld &student_world,
+                                   Coordinate coord)
+    : Grasshopper(student_world, IID_ADULT_GRASSHOPPER, coord, 1600) {
+  enemy_insects_.push_back(ActorType::ANT0);
+  enemy_insects_.push_back(ActorType::ANT1);
+  enemy_insects_.push_back(ActorType::ANT2);
+  enemy_insects_.push_back(ActorType::ANT3);
+  enemy_insects_.push_back(ActorType::GRASSHOPPER);
+}
 
 void AdultGrasshopper::doSomething() {
-  // TODO(comran): Make sure they can die too.
+  changePoints(-1);
+
+  if (getPoints() <= 0) {
+    die();
+    return;
+  }
+
   if (sleep()) return;
 
-  randomMovement();
+  std::list<Actor *> actors_at_point =
+      getStudentWorld().actorsOfTypesAt(enemy_insects_, getCoord());
+  if (actors_at_point.size() > 0 && randInt(0, 2) == 0) {  // 1 in 3 chance.
+    int rand_index = randInt(0, actors_at_point.size() - 1);
+    std::list<Actor *>::const_iterator i = actors_at_point.begin();
+
+    for (int j = 0; j < rand_index; j++) i++;
+
+    (*i)->bite(this, 50);
+  } else if (randInt(0, 9) == 0) {
+    Coordinate jump_to_coord(0, 0);
+    int give_up = 0;
+    bool gave_up = false;
+
+    do {
+      if (give_up++ > 100) {
+        gave_up = true;
+        break;  // So that we don't get stuck in a loop.
+      }
+
+      const int really_big_number = 10e6;
+      int radius = randInt(0, 10);
+      double theta =
+          3.14159 * randInt(0, really_big_number) / really_big_number;
+
+      jump_to_coord.setX(getX() + radius * cos(theta));
+      jump_to_coord.setY(getY() + radius * sin(theta));
+    } while (jump_to_coord.getX() < 0 || jump_to_coord.getX() >= VIEW_WIDTH ||
+             jump_to_coord.getY() < 0 || jump_to_coord.getY() >= VIEW_HEIGHT ||
+             getStudentWorld()
+                     .actorsOfTypeAt(ActorType::PEBBLE, jump_to_coord)
+                     .size() > 0);
+    if (!gave_up) moveTo(jump_to_coord);
+  } else {
+    if (!(eatFood(200) && randInt(0, 1) == 0)) randomMovement();
+  }
   addSleep(2);
 }
 
 void AdultGrasshopper::stun() {}
+void AdultGrasshopper::poison() {}
+
+void AdultGrasshopper::bite(Actor *bit_by, int damage) {
+  Insect::bite(bit_by, damage);
+
+  if (randInt(0, 1) == 0) {
+    bit_by->bite(this, 50);
+  }
+}
