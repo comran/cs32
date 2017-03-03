@@ -136,9 +136,6 @@ AntHill::AntHill(StudentWorld &student_world, int colony, Coordinate coord,
             kObjectStartingDirection, kDepth, kInitialHitPoints),
       compiler_(compiler),
       colony_(colony) {}
-AntHill::~AntHill() {
-  delete compiler_;
-}
 
 void AntHill::doSomething() {
   changePoints(-1);

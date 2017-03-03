@@ -133,7 +133,6 @@ class AntHill : public Actor {
  public:
   AntHill(StudentWorld &student_world, int colony, Coordinate coord,
           Compiler *compiler);
-  ~AntHill();
   void doSomething();
   static ActorType getActorTypeFromColony(int colony);
 

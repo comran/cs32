@@ -63,6 +63,7 @@ class StudentWorld : public GameWorld {
   Compiler *handleNewCompiler(int colony);
   std::map<Coordinate, std::list<Actor*>> actors_;
   std::string scoreboard_names_[4];
+  Compiler *compilers_[4];
 
   int ticks_;
   int scoreboard_[4];

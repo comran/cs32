@@ -53,11 +53,14 @@ StudentWorld::StudentWorld(std::string assetDir)
       scoreboard_{0, 0, 0, 0},
       ant_hills_on_field_(0) {}
 
-StudentWorld::~StudentWorld() { }
+StudentWorld::~StudentWorld() {
+  for(int i = 0;i < 4;i++) {
+    if(compilers_[i] == nullptr) continue;
+    delete compilers_[i];
+  }
+}
 
 int StudentWorld::init() {
-  cleanUp();
-
   // Load the field.
   Field f;
   string fieldFile = getFieldFilename(), error;
@@ -73,22 +76,21 @@ int StudentWorld::init() {
   if (ant_hills_on_field_ > 4) return GWSTATUS_LEVEL_ERROR;
 
   // Create compilers for bugs.
-  Compiler *compiler[4];
   for(int i = 0;i < 4;i++) {
     // Default nullptr in case compiler is not found.
-    compiler[i] = nullptr;
+    compilers_[i] = nullptr;
   }
   for (int i = 0; i < file_names.size(); i++) {
-    compiler[i] = new Compiler();
+    compilers_[i] = new Compiler();
 
     // Check for success in interpreting the code, and die on any errors.
-    if (!compiler[i]->compile(file_names[i], error)) {
+    if (!compilers_[i]->compile(file_names[i], error)) {
       setError(file_names[i] + " " + error);
       return GWSTATUS_LEVEL_ERROR;
     }
 
     // Store the name to be displayed on the scoreboard.
-    scoreboard_names_[i] = compiler[i]->getColonyName();
+    scoreboard_names_[i] = compilers_[i]->getColonyName();
   }
 
   // Iterate through every single square on the grid of the field in the file
@@ -125,7 +127,7 @@ int StudentWorld::init() {
         if(field_item_anthill_to_colony[item] >= ant_hills_on_field_) continue;
 
         addActor(new AntHill(*this, field_item_anthill_to_colony[item], coord,
-                             compiler[colony]));
+                             compilers_[colony]));
       }
     }
   }
@@ -143,6 +145,7 @@ void StudentWorld::cleanUp() {
        i != actors_.end(); i++) {
     for (std::list<Actor *>::iterator j = i->second.begin();
          j != i->second.end(); j++) {
+      if(*j == nullptr) continue;
       delete *j;
     }
   }
