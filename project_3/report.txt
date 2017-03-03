@@ -1,0 +1,125 @@
+1)
+For Actor.cpp/Actor.h:
+Actor:
+getCoord(): Get current xy position, wrapped into a coordinate object. All actors will use this same coordinate system, so this method will never need to be overrided and therefore is not virtual.
+randomDirection(): Returns a random direction (exclusing none) as a proper GraphObject::Direction. This is a helper function that does not modify the actor, so it will not need to be overridden and is therefore not virtual.
+getStudentWorld(): Getter for the actor's private reference to student world. This is the only way objects that extend Actor can access StudentWorld, so this function should not be overridden and is therefore not virtual.
+getActorType(): Identifies the form type that this actor was initialized as, for use in searching for certain actors at a specific point in the grid. This is a getter for a private variable in Actor, so it should not be overridden and is therefore not virtual.
+getPoints(): Getter for the current number of points that the actor holds. Depending on the actor's identifier, this can be used to store food content, hit points, etc. Since this is a getter for a private member of Actor, it should not be overridden and is therefore not virtual.
+checkForObjectMatch(ActorType type): Check if two objects share the same type. All actors share the same enum interface to identify them, which is stored in Actor and is accessed by getActorType(). Because of this, checkForObjectMatch should not be overridden to maintain this mutual interface, and is therefore not declared virtual.
+dead(): Return whether the actor has died. This is a getter for the death status stored in actor, so it is not declared virtual.
+moveTo(Coordinate coord): Move actor around the coordinate grid. All actors use a mutual system for specifying coordinates, so this method should not be overridden and is therefore not declared virtual.
+void changePoints(int delta): Change points and update death status if points fall below the threshold. Although actors use points for different things, all of them modify the same private variable in Actor, so this method should not be overridden and is therefore not declared virtual.
+
+doSomething(): Method called every tick for each actor. This is different for each actor implementation, and a default of doing nothing would not necessarily be correct behavior. Therefore, this method is declared pure virtual.
+poison(): Called when poisoned. Actors default to doing nothing when poisoned, but this method can be overridden (and is therefore virtual) in case an actor does respond to the poison.
+stun(): Called when stunned. Actors default to doing nothing when stunned, but this method can be overridden (and is therefore virtual) in case an actor does respond to the stun.
+bite(Actor *bit_by, int damage): Called when bitten. Actors default to doing nothing when bitten, but this method can be overridden (and is therefore virtual) in case an actor does respond to the bite.
+die(): Death routine. This must be called to change the private variable indicating whether an actor is dead or not, but it is declared virtual so that different types of actors can respond differently to death.
+
+Food:
+doSomething(): Food does nothing. There is only one type of food, so this is not declared virtual.
+
+Pebble:
+doSomething(): Food does nothing. There is only one type of pebble, so this is not declared virtual.
+
+Poison:
+doSomething(): Poison poisons all living instances of insects at its coordinate. There is only one type of poison, so this is not declared virtual.
+
+WaterPool:
+doSomething(): Stuns all living instances of insects at its coordinate. There is only one type of water pool, so this is not declared virtual.
+
+Pheromone:
+doSomething(): Decreases its strength by one. All pheromones perform the same thing, so this should not be overridden and is therefore not declared virtual.
+getActorType(int colony): Returns the ActorType corresponding to the pheromone for a given colony. This is a constant helper function for all colony pheromones, so it is not declared virtual.
+
+AntHill:
+doSomething(): Decreases its hitpoints, eats food at its coordinate, and gives birth when it has enough hit points. Since all ant hills for the colonies do the same thing, this is not declared virtual.
+getActorTypeFromColony(int colony): Returns the correct ant hill actor type for the raw colony number given. This helper function works for all colonies, so it is not declared virtual.
+
+Insect:
+doSomething(): Pure virtual since Insect is a generic type for more specific actors to inherit.
+resetStunned(): This reset the internal stunned state within the insect object, which is private. This function should not be overridden because the Insect object is solely responsible for tracking the stunned state.
+sleep(): Decrement sleep (if any) and return whether the insect is still sleeping. Insect is responsible for managing sleep, so this should not be overridden and is therefore not declared virtual.
+addSleep(): Adds sleep. Sleep is managed by insect, so this should not be overridden.
+die(): Adds food when an insect dies, and updates death boolean in Actor. This can be overridden since insects may perform other things when they die too, and is therefore virtual.
+stun(): Adds sleep to an insect if it is stunned only if it has not been stunned before moving again. This can be overridden since other insects may not do anything when stunned.
+bite(Actor* actor, int damage): Takes damage due to a bite. This is virtual since other actors may retaliate or perfomr an action if bitten.
+poison(): Takes damage if poisoned. This is virtual since other insects may be immune to poison.
+
+Ant:
+doSomething(): Reduces hit points, sleeps if it needs to, and interprets between 1 and 10 commands, according to what its program tells it to do. This is not virtual since all ants rely on the same interface to interpret their program and perform actions.
+bite(Actor *actor, int damage): Tracks whether the ant was bit. Not virtual since all ants need to have this state tracked in case they check the state during the next tick.
+getActorTypeFromColony(int colony): Converts raw colony number into actor type. Not virtual since this is a helper function for identifying all ants.
+getColonyFromActorType(ActorType actor_type): Converts actor type into a raw colony number. Not virtual since this is a helper function for identifying all ants.
+
+Grasshopper:
+doSomething(): Pure virtual since Grasshopper is a generic type for more specific actors to inherit.
+randomMovement(): Move in a certain random direction until blocked by a pebble. Not virtual since all grasshoppers have the same style of random movement.
+eatFood(int max_food): Eat any food at the insects coordinate, up to the maximum. Returns whether food was eaten. Not virtual since this is a helper function that allows the amount of food eaten to be capped.
+
+BabyGrasshopper:
+doSomething(): Decrements hit points, checks to see if it should transform into an AdultGrasshopper (given enough hit points), does random movement, and sleeps every tick. Not virtual since this process is defined for BabyGrasshopper.
+
+AdultGrasshopper:
+doSomething(): Decrements hit points, sleeps, tries to bite other actors (by chance), jumps (by chance), moves around the field, and sleeps. Not virtual since this action perfomed by an AdultGrasshopper is defined.
+stun(): Do nothing when stunned. Not virtual since all AdultGrasshoppers respond in the same way.
+poison(): Do nothing when poisoned. Not virtual since all AdultGrasshoppers respond in the same way.
+bite(): Take damage and attempt to retaliate if bit (by chance). Not virtual since all AdultGrasshoppers respond in the same way.
+
+StudentWorld.cpp/StudentWorld.h:
+
+class Coordinate (no virtual methods because Coordinate should not be inheritted):
+getX(), getY(), setX(int x), setY(int y(): Getters/setters for their respective coordinate components.
+coordInDirection(GraphObject::Direction direction): Returns a coordinate in the given direction.
+
+StudentWorld:
+init(): Called to construct everything on the field and set up the game. Virtual since the spec says to do so.
+move(): Called to perform a tick on all actors on the field. Virtual since the spec says to do so.
+cleanup(): Called to clean up everything on the field. Virtual since the spec says to do so.
+
+***None of the below methods are virtual because they all do the same thing for all actors, regardless of type, and overriding them would require a restructure of StudentWorld and the game itself.***
+These methods Add items to the field at their proper positions in the STL map data structure used in this project.
+addActor(Actor *actor)
+addFood(Coordinate coord, int food_points)
+addPheromone(Coordinate coord, int pheromone_points, int colony)
+
+
+updatePositionInGrid(Actor *actor, Coordinate to_coord): Updater to sync up actor coordinates with the order of actors in the STL map.
+
+Methods of searching for specific types of actors at a given coordinate.
+actorsOfTypeAt(ActorType actor_type, Coordinate coord)
+actorsOfTypesAt(std::vector<ActorType> actor_types, Coordinate to_coord): Plural form of the method above (for dealing with a set of actor types)
+
+Updaters for game ticker text and scoreboard.
+updateGameStatText()
+updateScoreboard(int colony): Called to increase the total number of ants for the given colony and update the leader.
+
+2) For the final draft of my project, I managed to sort out all the bugs that I noticed appearing in my program. Therefore, any bugs that are uncovered by test cases and grading were due to my misinterpretation of the spec or possible bugs that I missed from my testing. However, one bug that took me a while to uncover involved the Adult Grasshopper performing it's 1/3rd-chance bite routine: Since the adult grasshopper searches for any insect-type actors at its coordinate, it would always include itself as a possible bite victim. Therefore, the Adult Grasshopper would constantly attempt to bite itself when given the chance to do so, which would result in jittered movement. I solved this by removing all instances of the Adult Grasshopper's own object pointer from the array of insect-type actors at its coordinate.
+
+3) It was not specified how to handle more than 5 bug files provided to the program at launch, so I wrote code to return an error code when this occurred. In fact, the sample game file provided would continue to play the game like normal and segfault in the case that the user provided more than 4 bugs -- which I determined was not a good method of sanitizing the inputted file list.
+
+4)
+Actor: I progressively tested actor by noting for errors that all actors displayed in some way during simulation. In addition, I used this class as a means to test all other actors by including a print to the terminal of information regarding points, position changes, etc. that may result in errors. For instance, I had issues checking bounds when insects had to avoid pebbles, so I included a print for all XY-values when they were set and traced down the negative/out-of-bound calls.
+
+Food: Food was easy to test since it does nothing. I did make sure that energy was properly transferred between food and any insect that would eat the food by placing a single ant and food on a field and telling the ant to walk into the food and pick it up. Once the food was picked up, I would have a print that would show the new point values of the Food object and the Ant object, which should account for the transfer in energy after the food was eaten.
+
+Pebble: Pebbles did not require much testing, but they were my first actor used in the project to make sure that the grid was working and objects were being placed in the right place during the init. Therefore, I could put something in doSomething to check the XY-coordinates of the pebble and make sure that those coordinates match the actual XY-coordinate of the pebble from field.txt.
+
+Poison: I tested poison by printing information whenever another insect was poisoned, and detailed the number of points that the insect lost as a result. For AdultGrasshoppers, this should be zero since they are not affected by poison, which I saw clearly after placing a bunch of AdultGrasshoppers on a field of pure poison.
+
+WaterPool: I tested WaterPool similarly to how I checked poison. Again, for AdultGrasshoppers, I made sure that inheritance worked and that they were not affected when running into pools of water, while baby grasshoppers and ants were affected.
+
+Pheromone: I tested Pheromone by having Ants release a pheromone and walk in random directions. After running this in simulation, I expected to see pools of pheromone (in the appropriate color for the colony they came from) appearing around Ant Hills as the game progressed. In addition, I modified the ants to then follow the pheromones back after picking up food. This led to ants that followed their pheromones back (which eventually led back to their ant hill) to have an advantage over other ants, and therefore a higher score at the end of the game.
+
+AntHill: I tested AntHill first without any other actors on the field, except for one hill surrounded by food, one hill surrounded by poison, one hill surrounded by water, and one hill surrounded by nothing. I then wrote a simple ant class to use pheromones to go out and pick up food, then return to the ant hill and drop the food on the hill. After running this test, I expected the ant hill surrounded by food to have the most ants produced. Indeed, after running the test, the ant hill surrounded by food had produced a ton of ants, while the other three ant hills did not produce any since the ants were not close to any food sources. I also checked to make sure that the other three ant hills died after a certain number of ticks since the hit points of the ant hill gradually decreases as the game progresses.
+
+Insect: I tested insect by ensuring that the actors that inherit Insect (grasshoppers and ants) are able to properly sleep and be poisoned/stunned (if they are able to be). Specifically, I ran the program with a field full of baby grasshoppers and made sure that they slept for two ticks and moved for two ticks, which is a behavior controlled under the Insect class. To make sure it worked, I froze the program and went tick-by-tick, making sure that the baby grasshopper would move and then stay at the square for two ticks.
+
+Ant: I wrote multiple Ant program files to test various behaviors that an Ant may be programmed to do. For instance, I made bite_ant.bug that would roam the field until it encountered another bug, which it would then proceed to bite. I then printed out whenever a bite occurred, and checked to see if the damage was done to the other insect, and, if the other ant was a bug, that it would track to see whether it was bit or not at the current square. In addition, I wrote another bug to try and use pheromones to trace back food that it found to its own AntHill, and compared the success of that bug to another bug that did not use pheromones. Through the process of creating these various bugs, I was able to uncover errors regarding things like not resetting the was_bitten state, ants attacking themselves, and ants running more than 10 operations during a single tick.
+
+Grasshopper: Grasshopper mainly deals with the random movement that BabyGrasshopper and AdultGrasshopper do to roam the field and avoid pebbles. To test this, I placed BabyGrasshoppers in a field full of pebbles, and watched to make sure that they would not walk into pebbles and did not go more than 10 steps in a direction before picking a new random direction. To make sure I had the bounds correct, I set the distance to be the maximum of 10 steps and the minimum of 2 steps to make sure that grasshoppers do indeed go the maximum distance when given the chance.
+
+BabyGrasshopper: To test BabyGrasshopper, I put BabyGrasshoppers on a field full of food to make sure that they were able to roam around the field, eat food, and transform into an AdultGrasshopper once they had eaten enough food. In addition, I checked to make sure that the BabyGrasshopper would not overeat in a single tick. To see if the BabyGrasshoppers properly used their tick count, I placed a bunch of BabyGrasshoppers on an otherwise empty field (bordered by pebbles) to make sure that the grasshoppers died at the same time after a certain number of hit points since they would all decrement their hit counts at the same speed.
+
+AdultGrasshopper: To test AdultGrasshopper, I continued my test of BabyGrasshopper by waiting until they turned into AdultGrasshoppers. I would then make sure that the AdultGrasshopper would jump around periodically, while otherwise continue moving around the field in search of food. To make sure that the AdultGrasshopper was not affected by being stunned or poisoned, I also placed them on a field of poison and water to make sure that they survived and continued to move without being affected. Finally, I checked to make sure that the AdultGrasshopper would not jitter in the presence of no enemy actors, which would indicate that it was attempting to bite itself since the AdultGrasshopper would only stop when it encountered an enemy to bite.

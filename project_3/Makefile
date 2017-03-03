@@ -1,5 +1,6 @@
 #CC = ../g32    # On lnxsrv07 or 09, replace this with g32
-CC = /usr/bin/clang++-3.5
+#CC = /usr/bin/clang++-3.5
+CC = /usr/bin/g++
 LIBS = -lglut -lGL -lGLU
 STD = -std=c++11
 

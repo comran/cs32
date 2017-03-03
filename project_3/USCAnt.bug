@@ -28,12 +28,12 @@ on_hill_with_food:
 
 on_block:
   generateRandomNumber 3
-  rotateClockwise
+  rotateCounterClockwise
   goto start
 
 return_to_home:
  	if i_smell_pheromone_in_front_of_me then goto on_carrying_move_forward
-  rotateClockwise
+  rotateCounterClockwise
   generateRandomNumber 3
  	if last_random_number_was_zero then goto on_normal_move
   goto return_to_home
