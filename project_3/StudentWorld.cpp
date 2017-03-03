@@ -53,7 +53,7 @@ StudentWorld::StudentWorld(std::string assetDir)
       scoreboard_{0, 0, 0, 0},
       ant_hills_on_field_(0) {}
 
-StudentWorld::~StudentWorld() { cleanUp(); }
+StudentWorld::~StudentWorld() { }
 
 int StudentWorld::init() {
   cleanUp();
@@ -74,6 +74,10 @@ int StudentWorld::init() {
 
   // Create compilers for bugs.
   Compiler *compiler[4];
+  for(int i = 0;i < 4;i++) {
+    // Default nullptr in case compiler is not found.
+    compiler[i] = nullptr;
+  }
   for (int i = 0; i < file_names.size(); i++) {
     compiler[i] = new Compiler();
 
@@ -118,6 +122,7 @@ int StudentWorld::init() {
         field_item_anthill_to_colony[Field::FieldItem::anthill1] = 1;
         field_item_anthill_to_colony[Field::FieldItem::anthill2] = 2;
         field_item_anthill_to_colony[Field::FieldItem::anthill3] = 3;
+        if(field_item_anthill_to_colony[item] >= ant_hills_on_field_) continue;
 
         addActor(new AntHill(*this, field_item_anthill_to_colony[item], coord,
                              compiler[colony]));
@@ -125,7 +130,7 @@ int StudentWorld::init() {
     }
   }
 
-  return GWSTATUS_NO_WINNER;
+  return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::cleanUp() {
@@ -141,6 +146,8 @@ void StudentWorld::cleanUp() {
       delete *j;
     }
   }
+
+  actors_.clear();
 }
 
 int StudentWorld::move() {
@@ -339,11 +346,13 @@ void StudentWorld::updateScoreboard(int colony) {
   scoreboard_[colony]++;
 
   // Declare an initial leader once a colony has at least 6 ants.
-  if (leader_ < 0 && scoreboard_[colony] > 5) leader_ = colony;
+  if (leader_ < 0){
+   if(scoreboard_[colony] > 5) leader_ = colony;
 
+  }else if (scoreboard_[colony] > scoreboard_[leader_] && scoreboard_[colony] > 5) {
   // Set this colony as the leader only if it has more ants than the current
   // leader and has met the minimum 6 ant condition for being a leader in the
   // first place.
-  if (scoreboard_[colony] > scoreboard_[leader_] && scoreboard_[colony] > 5)
     leader_ = colony;
+  }
 }

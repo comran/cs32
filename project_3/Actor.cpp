@@ -136,6 +136,10 @@ AntHill::AntHill(StudentWorld &student_world, int colony, Coordinate coord,
             kObjectStartingDirection, kDepth, kInitialHitPoints),
       compiler_(compiler),
       colony_(colony) {}
+AntHill::~AntHill() {
+  delete compiler_;
+}
+
 void AntHill::doSomething() {
   changePoints(-1);
   if (dead()) return;
@@ -218,7 +222,7 @@ void Insect::poison() { changePoints(-1 * kPoisonDamage); }
 Ant::Ant(StudentWorld &student_world, int colony, Coordinate coord,
          Compiler *compiler, AntHill &my_ant_hill, int hit_points)
     : Insect(student_world, getImageForColony(colony), coord,
-             getActorTypeFromColony(colony), randomDirection(), kDepth,
+             getActorTypeFromColony(colony), static_cast<Actor::Direction>(randInt(1, 4)), kDepth,
              hit_points),
       compiler_(compiler),
       my_ant_hill_(my_ant_hill),
@@ -251,6 +255,8 @@ void Ant::doSomething() {
   }
 
   if (sleep()) return;
+
+  if(compiler_ == nullptr) return;
 
   // Run commands until an action is perform by the ant, up to a total of 10
   // commands.
@@ -376,7 +382,7 @@ bool Ant::runCommand(const Compiler::Command &c) {
             }
           }
 
-          instruction_counter_ = stoi(c.operand2);
+          if(alive_enemy) instruction_counter_ = stoi(c.operand2);
           break;
         }
         case Compiler::i_was_blocked_from_moving: {
@@ -531,7 +537,7 @@ void Ant::bite(Actor *bit_by, int damage) {
 Grasshopper::Grasshopper(StudentWorld &student_world, int iid, Coordinate coord,
                          int points)
     : Insect(student_world, iid, coord, ActorType::GRASSHOPPER,
-             randomDirection(), kDepth, points),
+             static_cast<Actor::Direction>(randInt(1, 4)), kDepth, points),
       distance_(randInt(kMinRandomWalkRange, kMaxRandomWalkRange)) {}
 
 void Grasshopper::randomMovement() {
