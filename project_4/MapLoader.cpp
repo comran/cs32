@@ -38,7 +38,6 @@ bool MapLoaderImpl::load(string mapFile) {
   int num_attractions = 0;
 
   while (getline(in, line)) {
-    //std::cout << state << ": " << line << std::endl;
     switch (state) {
       case STREET_NAME: {
         current_segment.streetName = line;
@@ -147,6 +146,23 @@ bool MapLoader::getSegment(size_t segNum, StreetSegment &seg) const {
 
 // TODO(comran): REMOVE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 int main() {
-  MapLoaderImpl map;
+  MapLoader map;
   map.load("./mapdata.txt");
+
+  AttractionMapper attraction_map;
+  attraction_map.init(map);
+
+  GeoCoord gc;
+  cout << attraction_map.getGeoCoord("Thalians Mental Health Center", gc)
+       << endl;
+  cout << gc.latitudeText << " " << gc.longitudeText << endl;
+
+  SegmentMapper segment_map;
+  segment_map.init(map);
+
+  vector<StreetSegment> segments =
+      segment_map.getSegments(GeoCoord("34.0542770", "-118.3920932"));
+  for (int i = 0; i < segments.size(); i++) {
+    cout << segments.at(i).streetName << endl;
+  }
 }

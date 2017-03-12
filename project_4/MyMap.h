@@ -1,3 +1,6 @@
+#ifndef MYMAP_INCLUDED
+#define MYMAP_INCLUDED
+
 #include <iostream>
 
 template <typename KeyType, typename ValueType>
@@ -81,7 +84,8 @@ const ValueType *MyMap<KeyType, ValueType>::find(const KeyType &key) const {
 }
 
 template <typename KeyType, typename ValueType>
-ValueType *MyMap<KeyType, ValueType>::locate(Node *tree, const KeyType &key) const {
+ValueType *MyMap<KeyType, ValueType>::locate(Node *tree,
+                                             const KeyType &key) const {
   // Assumes that tree already exists.
 
   if (tree->key == key) return &tree->value;
@@ -146,3 +150,5 @@ void MyMap<KeyType, ValueType>::dumpTree(Node *tree) {
     std::cout << "End" << std::endl;
   }
 }
+
+#endif // MYMAP_INCLUDED
