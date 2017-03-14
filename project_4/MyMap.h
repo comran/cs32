@@ -17,6 +17,7 @@ class MyMap {
 
   // for a modifiable map, return a pointer to modifiable ValueType
   ValueType *find(const KeyType &key) {
+    // TODO(comran): Is this good?
     return const_cast<ValueType *>(const_cast<const MyMap *>(this)->find(key));
   }
 
@@ -118,6 +119,8 @@ void MyMap<KeyType, ValueType>::insert(Node *tree, const KeyType &key,
     } else {
       insert(tree->more, key, value);
     }
+  } else {
+    tree->value = value;
   }
 }
 

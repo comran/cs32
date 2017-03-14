@@ -5,6 +5,8 @@
 #include <vector>
 using namespace std;
 
+// TODO(comran): Delete segment map properly on deconstruction.
+
 class SegmentMapperImpl {
  public:
   SegmentMapperImpl();
