@@ -2,6 +2,7 @@
 #include "MyMap.h"
 
 #include <string>
+
 #include <fstream>
 #include <vector>
 using namespace std;
@@ -22,7 +23,6 @@ class MapLoaderImpl {
 };
 
 MapLoaderImpl::MapLoaderImpl() {}
-
 MapLoaderImpl::~MapLoaderImpl() {}
 
 bool MapLoaderImpl::load(string mapFile) {

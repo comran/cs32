@@ -26,7 +26,7 @@ void AttractionMapperImpl::init(const MapLoader &ml) {
   for (int i = 0; i < ml.getNumSegments(); i++) {
     StreetSegment current_segment;
     if (!ml.getSegment(i, current_segment))
-      cout << "Street DNE @ num " << i << endl;
+      cerr << "Street DNE @ num " << i << endl;
 
     for (int i = 0; i < current_segment.attractions.size(); i++) {
       attraction_map_.associate(

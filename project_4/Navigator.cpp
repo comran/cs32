@@ -6,12 +6,14 @@
 #include <vector>
 #include <queue>
 #include <list>
+#include <iomanip>
 #include <math.h>
 #include <unistd.h>
 using namespace std;
 
 struct TravelCost {
   StreetSegment segment;
+  vector<NavSegment> navigation;
   double cost;
 };
 
@@ -20,18 +22,27 @@ bool operator<(const TravelCost &a, const TravelCost &b) {
 }
 
 bool operator==(const GeoCoord &a, const GeoCoord &b) {
-  return a.latitudeText == b.latitudeText && a.longitudeText == b.longitudeText;
+  return a.latitude == b.latitude && a.longitude == b.longitude;
 }
 
 bool operator==(const GeoSegment &a, const GeoSegment &b) {
   return a.start == b.start && a.end == b.end;
 }
 
-void printSeg(const StreetSegment &seg) {
+void printStreetSeg(const StreetSegment &seg) {
   cout << seg.streetName << " " << seg.segment.start.latitudeText << ", "
        << seg.segment.start.longitudeText << "  "
        << seg.segment.end.latitudeText << ", " << seg.segment.end.longitudeText
        << endl;
+}
+
+void printSeg(const GeoSegment &seg) {
+  cout << seg.start.latitudeText << ", " << seg.start.longitudeText << "  "
+       << seg.end.latitudeText << ", " << seg.end.longitudeText << endl;
+}
+
+void printCoord(const GeoCoord &coord) {
+  cout << coord.latitudeText << ", " << coord.longitudeText << endl;
 }
 
 class NavigatorImpl {
@@ -43,8 +54,8 @@ class NavigatorImpl {
                      vector<NavSegment> &directions) const;
 
  private:
-  string proceedAngleToString(double angle);
-  string turnAngleToString(double angle);
+  string proceedAngleToString(double angle) const;
+  string turnAngleToString(double angle) const;
 
   AttractionMapper attraction_mapper_;
   SegmentMapper segment_mapper_;
@@ -74,32 +85,47 @@ NavResult NavigatorImpl::navigate(string start, string end,
   vector<StreetSegment> init_segments = segment_mapper_.getSegments(src);
 
   for (int i = 0; i < init_segments.size(); i++) {
-    double distance = distanceEarthMiles(init_segments.at(i).segment.start,
-                                         init_segments.at(i).segment.end);
-    to_go.push(TravelCost({init_segments.at(i), distance}));
-  }
+    vector<NavSegment> navigation;
 
-  cout << "Init size: " << to_go.size() << endl;
+    GeoCoord start = src;
+    GeoCoord end = init_segments.at(i).segment.end;
+    GeoSegment geo_segment = GeoSegment(start, end);
+
+    double distance = distanceEarthMiles(start, end);
+    double angle = angleOfLine(geo_segment);
+    string direction = proceedAngleToString(angle);
+    string street_name = init_segments.at(i).streetName;
+
+    navigation.push_back(
+        NavSegment(direction, street_name, distance, geo_segment));
+
+    to_go.push(TravelCost({init_segments.at(i), navigation, distance}));
+  }
 
   bool found = false;
   int iterate = 0;
+
   while (to_go.size() > 0 && !found) {
-    cout << "Iterate: " << iterate++ << endl;
-    cout << to_go.size();
-    cout << "_______________________________________________________________\n";
+    iterate++;
+    if (iterate % 1000 == 0) cout << "Ran: " << iterate << endl;
 
     TravelCost segment_cost = to_go.top();
     to_go.pop();
 
-    printSeg(segment_cost.segment);
-    cout << segment_cost.cost << endl;
-
     // See if dst exists on this street.
     for (int i = 0; i < segment_cost.segment.attractions.size(); i++) {
       if (segment_cost.segment.attractions.at(i).name == end) {
+        if (segment_cost.navigation.size() == 0) {
+          // TODO(comran): Re-compute navigation for same segment.
+          // segment_cost.navigation.at(1).m_
+        }
         found = true;
         cout << "FOUND " << segment_cost.segment.streetName << "\n";
-        break;
+        cout << "distance: " << segment_cost.cost << "\n";
+        cout << "iterate: " << iterate << "\n";
+
+        directions = segment_cost.navigation;
+        return NAV_SUCCESS;
       }
     }
 
@@ -111,14 +137,14 @@ NavResult NavigatorImpl::navigate(string start, string end,
 
     for (int i = 0; i < have_gone.size(); i++) {
       for (int j = 0; j < travel_to.size(); j++) {
-
         if (have_gone.at(i) == travel_to.at(j)) {
           travel_to.erase(travel_to.begin() + j);
+          j--;
         }
       }
     }
 
-    for(int i = 0;i < travel_to.size();i++) {
+    for (int i = 0; i < travel_to.size(); i++) {
       have_gone.push_back(travel_to.at(i));
     }
 
@@ -130,13 +156,46 @@ NavResult NavigatorImpl::navigate(string start, string end,
         if (new_segments.at(j).segment == segment_cost.segment.segment) {
           continue;
         }
-        printSeg(new_segments.at(j));
 
-        double distance = distanceEarthMiles(new_segments.at(i).segment.start,
-                                             new_segments.at(i).segment.end);
+        GeoCoord start = new_segments.at(i).segment.start;
+        GeoCoord end = new_segments.at(i).segment.end;
+
+        GeoSegment geo_segment = GeoSegment(start, end);
+        double distance = distanceEarthMiles(start, end);
+        NavSegment::NavCommand command =
+            new_segments.at(j).streetName == segment_cost.segment.streetName
+                ? NavSegment::PROCEED
+                : NavSegment::TURN;
+        double angle;
+            angleBetween2Lines(geo_segment, segment_cost.segment.segment);
+        string street_name = new_segments.at(i).streetName;
+
+        if (command == NavSegment::PROCEED) {
+          angle = angleBetween2Lines(geo_segment, segment_cost.segment.segment) + angleOfLine(geo_segment);
+          street_name = new_segments.at(i).streetName;
+        } else {
+          angle = angleOfLine(segment_cost.segment.segment);
+          street_name = new_segments.at(i).streetName;
+        }
+
+        string direction = command == NavSegment::PROCEED
+                               ? proceedAngleToString(angle)
+                               : turnAngleToString(angle);
+
+        printSeg(geo_segment);
+
+        vector<NavSegment> navigation;
+        navigation.insert(navigation.end(), segment_cost.navigation.begin(),
+                          segment_cost.navigation.end());
+
+        if (command == NavSegment::PROCEED)
+          navigation.push_back(
+              NavSegment(direction, street_name, distance, geo_segment));
+        else
+          navigation.push_back(NavSegment(direction, street_name));
 
         to_go.push(TravelCost(
-            {new_segments.at(j), segment_cost.cost + distance}));
+            {new_segments.at(j), navigation, segment_cost.cost + distance}));
       }
     }
   }
@@ -144,7 +203,7 @@ NavResult NavigatorImpl::navigate(string start, string end,
   return NAV_NO_ROUTE;
 }
 
-string NavigatorImpl::proceedAngleToString(double angle) {
+string NavigatorImpl::proceedAngleToString(double angle) const {
   angle = fmod(angle, 360.0);
 
   if (angle < 0 || angle >= 360)
@@ -171,15 +230,14 @@ string NavigatorImpl::proceedAngleToString(double angle) {
   return "INVALID";
 }
 
-string NavigatorImpl::turnAngleToString(double angle) {
+string NavigatorImpl::turnAngleToString(double angle) const {
   if (angle < 0 || angle >= 360) return "INVALID";
 
   if (angle < 180) return "left";
   return "right";
 }
 
-//******************** Navigator functions
-//************************************
+//******************** Navigator functions ************************************
 
 // These functions simply delegate to NavigatorImpl's functions.
 // You probably don't want to change any of this code.
@@ -204,5 +262,22 @@ int main() {
   nav.loadMapData("./mapdata.txt");
 
   vector<NavSegment> directions;
-  cout << nav.navigate("Diddy Riese", "Theta Delta Chi Fraternity", directions) << endl;
+  NavResult nav_return =
+      nav.navigate("1061 Broxton Avenue", "Headlines!", directions);
+
+  cout << "Navigation returned " << nav_return << endl;
+  for (int i = 0; i < directions.size(); i++) {
+    cout << left << "i: " << setw(3) << i << " command: " << setw(3)
+         << directions.at(i).m_command << " direction: " << setw(10)
+         << directions.at(i).m_direction << " street name: " << setw(30) << directions.at(i).m_streetName;
+    if (directions.at(i).m_command == NavSegment::PROCEED) {
+      cout << " distance: " << setw(10)
+           << setprecision(2) << directions.at(i).m_distance
+           << " start: " << directions.at(i).m_geoSegment.start.latitudeText
+           << ", " << directions.at(i).m_geoSegment.start.longitudeText
+           << "      end: " << directions.at(i).m_geoSegment.end.latitudeText
+           << ", " << directions.at(i).m_geoSegment.end.longitudeText;
+    }
+    cout << endl;
+  }
 }
