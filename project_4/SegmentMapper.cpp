@@ -18,11 +18,14 @@ class SegmentMapperImpl {
   void addPOI(const GeoCoord &gc, const StreetSegment &segment);
 
   MyMap<double, MyMap<double, vector<StreetSegment>> *> segments_map_;
+  vector<MyMap<double, vector<StreetSegment>> *> segments_vector_;
 };
 
 SegmentMapperImpl::SegmentMapperImpl() {}
 
-SegmentMapperImpl::~SegmentMapperImpl() {}
+SegmentMapperImpl::~SegmentMapperImpl() {
+  for(int i = 0;i < segments_vector_.size();i++) delete segments_vector_.at(i);
+}
 
 void SegmentMapperImpl::init(const MapLoader &ml) {
   for (int i = 0; i < ml.getNumSegments(); i++) {
@@ -73,6 +76,7 @@ void SegmentMapperImpl::addPOI(const GeoCoord &gc,
   new_latitude->associate(gc.longitude, new_segments);
 
   segments_map_.associate(gc.latitude, new_latitude);
+  segments_vector_.push_back(new_latitude);
 }
 
 //******************** SegmentMapper functions ********************************

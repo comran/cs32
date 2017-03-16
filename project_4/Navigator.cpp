@@ -168,8 +168,9 @@ NavResult NavigatorImpl::navigate(string start, string end,
 
         NavSegment &from_segment = new_nav.back();
         from_segment.m_geoSegment.end = travel_to.at(i);
-        from_segment.m_distance = distanceEarthMiles(
+        double distance = distanceEarthMiles(
             from_segment.m_geoSegment.start, from_segment.m_geoSegment.end);
+        from_segment.m_distance = distance;
         from_segment.m_streetName = new_segments.at(i).streetName;
 
         NavSegment to_segment("", new_segments.at(i).streetName, 0,
@@ -177,7 +178,7 @@ NavResult NavigatorImpl::navigate(string start, string end,
         new_nav.push_back(to_segment);
 
         to_go.push(TravelCost({new_segments.at(j), new_nav,
-                               segment_cost.cost + from_segment.m_distance}));
+                               segment_cost.cost + distance}));
       }
     }
   }
@@ -223,12 +224,12 @@ void NavigatorImpl::finalizeNavSegments(vector<NavSegment> &segments) const {
   for (int i = 0; i < segments.size(); i++) {
     if (i > 0) {
       if (segments.at(i).m_streetName != segments.at(i - 1).m_streetName) {
-        double angle = angleBetween2Lines(
-                segments.at(i - 1).m_geoSegment, segments.at(i).m_geoSegment);
-        NavSegment turn_seg = NavSegment(
-            turnAngleToString(angle),
-            segments.at(i).m_streetName);
-        cout << setw(8) << turnAngleToString(angle) << ": " << setw(10) << angle << endl;
+        double angle = angleBetween2Lines(segments.at(i - 1).m_geoSegment,
+                                          segments.at(i).m_geoSegment);
+        NavSegment turn_seg =
+            NavSegment(turnAngleToString(angle), segments.at(i).m_streetName);
+        cout << setw(8) << turnAngleToString(angle) << ": " << setw(10) << angle
+             << endl;
 
         segments.insert(segments.begin() + i, turn_seg);
         continue;
@@ -275,8 +276,8 @@ int main() {
   nav.loadMapData("./mapdata.txt");
 
   vector<NavSegment> directions;
-  NavResult nav_return =
-      nav.navigate("Brentwood Country Mart", "Theta Delta Chi Fraternity", directions);
+  NavResult nav_return = nav.navigate("Brentwood Country Mart",
+                                      "Theta Delta Chi Fraternity", directions);
 
   cout << "Navigation returned " << nav_return << endl;
   for (int i = 0; i < directions.size(); i++) {
@@ -297,12 +298,11 @@ int main() {
   }
 
   cout << endl << "And now some raw coordinates that can be plotted using "
-    << "https://www.darrinward.com/lat-long/?id=2738666" << endl;
-  for(int i = 0;i < directions.size();i++) {
-    if(directions.at(i).m_geoSegment.start.latitudeText == "0") continue;
-    cout
-           << directions.at(i).m_geoSegment.start.latitudeText
-           << ", " << directions.at(i).m_geoSegment.start.longitudeText << endl;
+       << "https://www.darrinward.com/lat-long/?id=2738666" << endl;
+  for (int i = 0; i < directions.size(); i++) {
+    if (directions.at(i).m_geoSegment.start.latitudeText == "0") continue;
+    cout << directions.at(i).m_geoSegment.start.latitudeText << ", "
+         << directions.at(i).m_geoSegment.start.longitudeText << endl;
   }
 }
 
@@ -317,7 +317,7 @@ int main() {
 // For example, with the mapdata.txt file we supplied you,
 //  ./BruinNav mapdata.txt "Harvard-Westlake Middle School" "GreyStone Mansion"
 // should produce something like
-//   Routing...                     
+//   Routing...
 //   You are starting at: Harvard-Westlake Middle School
 //   Proceed 0.47 miles southeast on Brooklawn Drive
 //   Turn right onto Angelo Drive
@@ -341,21 +341,30 @@ int main() {
 //   You have reached your destination: GreyStone Mansion
 //   Total travel distance: 2.5 miles
 // and
-//  ./BruinNav mapdata.txt "Harvard-Westlake Middle School" "GreyStone Mansion" -raw
+//  ./BruinNav mapdata.txt "Harvard-Westlake Middle School" "GreyStone Mansion"
+//  -raw
 // might produce 133 lines starting
 //   Start: Harvard-Westlake Middle School
 //   End:   GreyStone Mansion
-//   34.0904161,-118.4344198 34.0905309,-118.4343340 northeast 0.0093 Brooklawn Drive
+//   34.0904161,-118.4344198 34.0905309,-118.4343340 northeast 0.0093 Brooklawn
+//   Drive
 //   34.0905309,-118.4343340 34.0904815,-118.4341398 east 0.0116 Brooklawn Drive
-//   34.0904815,-118.4341398 34.0903824,-118.4339467 southeast 0.0130 Brooklawn Drive
-//   34.0903824,-118.4339467 34.0902310,-118.4337702 southeast 0.0145 Brooklawn Drive
-//   34.0902310,-118.4337702 34.0900681,-118.4335630 southeast 0.0163 Brooklawn Drive
-//   34.0900681,-118.4335630 34.0899633,-118.4334635 southeast 0.0092 Brooklawn Drive
-//   34.0899633,-118.4334635 34.0897917,-118.4333739 southeast 0.0129 Brooklawn Drive
-//   34.0897917,-118.4333739 34.0894654,-118.4333087 south 0.0229 Brooklawn Drive
+//   34.0904815,-118.4341398 34.0903824,-118.4339467 southeast 0.0130 Brooklawn
+//   Drive
+//   34.0903824,-118.4339467 34.0902310,-118.4337702 southeast 0.0145 Brooklawn
+//   Drive
+//   34.0902310,-118.4337702 34.0900681,-118.4335630 southeast 0.0163 Brooklawn
+//   Drive
+//   34.0900681,-118.4335630 34.0899633,-118.4334635 southeast 0.0092 Brooklawn
+//   Drive
+//   34.0899633,-118.4334635 34.0897917,-118.4333739 southeast 0.0129 Brooklawn
+//   Drive
+//   34.0897917,-118.4333739 34.0894654,-118.4333087 south 0.0229 Brooklawn
+//   Drive
 // and ending
 //   34.0904163,-118.4036377 34.0905573,-118.4036590 north 0.0098 Schuyler Road
-//   34.0905573,-118.4036590 34.0908428,-118.4038080 northwest 0.0215 Schuyler Road
+//   34.0905573,-118.4036590 34.0908428,-118.4038080 northwest 0.0215 Schuyler
+//   Road
 //   turn right Stonewood Drive
 //   34.0908428,-118.4038080 34.0908832,-118.4036471 east 0.0096 Stonewood Drive
 //   34.0908832,-118.4036471 34.0908732,-118.4034846 east 0.0093 Stonewood Drive
@@ -363,11 +372,12 @@ int main() {
 //   34.0908807,-118.4033732 34.0909505,-118.4031144 east 0.0156 Stonewood Drive
 //   34.0909505,-118.4031144 34.0909630,-118.4030512 east 0.0037 Stonewood Drive
 //   34.0909630,-118.4030512 34.0909256,-118.4029338 east 0.0072 Stonewood Drive
-//   34.0909256,-118.4029338 34.0919749,-118.4018226 northeast 0.0964 Stonewood Drive
+//   34.0909256,-118.4029338 34.0919749,-118.4018226 northeast 0.0964 Stonewood
+//   Drive
 //
 // If you build the program as is, you'll notice the turn-by-turn instructions
 // say IN_SOME_DIRECTION instead of east or southwest or some actual direction.
-// That's because of the template appearing a few lines below; read the comment 
+// That's because of the template appearing a few lines below; read the comment
 // before it.
 /*
 #include "provided.h"
@@ -378,7 +388,8 @@ int main() {
 #include <cstring>
 using namespace std;
 
-// START OF WHAT YOU CAN REMOVE ONCE YOU'VE IMPLEMENTED string directionOfLine(const GeoSegment& gs)
+// START OF WHAT YOU CAN REMOVE ONCE YOU'VE IMPLEMENTED string
+directionOfLine(const GeoSegment& gs)
 // If you want the turn-by-turn directions to give a real direction like
 // east or southwest instead of IN_SOME_DIRECTION, you'll need to
 // implement the ordinary function
@@ -386,7 +397,7 @@ using namespace std;
 // to return a string like "east" or "southwest" based on the angle of the
 // GeoSegment gs according to the table at the bottom of page 20 of the spec.
 // When you do that, you can delete this comment and the template function
-// below that appears here solely to allow this main.cpp to build. 
+// below that appears here solely to allow this main.cpp to build.
 // Why didn't we just write the real function for you?  Because it's also
 // a function you'd find useful in producing the NavSegments in the navigate()
 // method.  Since it's useful in more than one .cpp file, its declaration
@@ -421,14 +432,16 @@ string directionOfLine(const T& t)
 
   return "INVALID";
 }
-// END OF WHAT YOU CAN REMOVE ONCE YOU'VE IMPLEMENTED string directionOfLine(const GeoSegment& gs)
+// END OF WHAT YOU CAN REMOVE ONCE YOU'VE IMPLEMENTED string
+directionOfLine(const GeoSegment& gs)
 
-void printDirectionsRaw(string start, string end, vector<NavSegment>& navSegments);
+void printDirectionsRaw(string start, string end, vector<NavSegment>&
+navSegments);
 void printDirections(string start, string end, vector<NavSegment>& navSegments);
 
 int main(int argc, char *argv[])
 {
-  bool raw = false; 
+  bool raw = false;
   if (argc == 5  &&  strcmp(argv[4], "-raw") == 0)
   {
     raw = true;
@@ -436,17 +449,20 @@ int main(int argc, char *argv[])
   }
   if (argc != 4)
   {
-    cout << "Usage: BruinNav mapdata.txt \"start attraction\" \"end attraction name\"" << endl
+    cout << "Usage: BruinNav mapdata.txt \"start attraction\" \"end attraction
+name\"" << endl
        << "or" << endl
-       << "Usage: BruinNav mapdata.txt \"start attraction\" \"end attraction name\" -raw" << endl;
+       << "Usage: BruinNav mapdata.txt \"start attraction\" \"end attraction
+name\" -raw" << endl;
     return 1;
   }
-  
+
   Navigator nav;
 
   if ( ! nav.loadMapData(argv[1]))
   {
-    cout << "Map data file was not found or has bad format: " << argv[1] << endl;
+    cout << "Map data file was not found or has bad format: " << argv[1] <<
+endl;
     return 1;
   }
 
@@ -481,7 +497,8 @@ int main(int argc, char *argv[])
   }
 }
 
-void printDirectionsRaw(string start, string end, vector<NavSegment>& navSegments)
+void printDirectionsRaw(string start, string end, vector<NavSegment>&
+navSegments)
 {
   cout << "Start: " << start << endl;
   cout << "End:   " << end << endl;
@@ -537,7 +554,8 @@ void printDirections(string start, string end, vector<NavSegment>& navSegments)
       if (distSinceLastTurn > 0)
       {
         cout << "Proceed " << distSinceLastTurn << " miles "
-             << directionOfLine(effectiveSegment) << " on " << thisStreet << endl;
+             << directionOfLine(effectiveSegment) << " on " << thisStreet <<
+endl;
         thisStreet.clear();
         distSinceLastTurn = 0;
       }
