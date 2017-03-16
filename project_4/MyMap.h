@@ -135,23 +135,4 @@ void MyMap<KeyType, ValueType>::deleteTree(Node *tree) {
   size_--;
 }
 
-template <typename KeyType, typename ValueType>
-void MyMap<KeyType, ValueType>::dumpTree(Node *tree) {
-  if (tree_ == nullptr) return;
-  if (tree == nullptr) return;
-  std::cout << tree->key << ": " << tree->value << std::endl;
-
-  if (tree->less != nullptr) {
-    std::cout << "LEFT: ";
-    dumpTree(tree->less);
-    std::cout << "End" << std::endl;
-  }
-
-  if (tree->more != nullptr) {
-    std::cout << "RIGHT: ";
-    dumpTree(tree->more);
-    std::cout << "End" << std::endl;
-  }
-}
-
 #endif // MYMAP_INCLUDED
