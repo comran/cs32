@@ -4,8 +4,8 @@ CFLAGS  = -g -Wall -std=c++11
 
 all: main.a
 
-main.a: main.o MapLoader.o AttractionMapper.o SegmentMapper.o Navigator.o
-	$(CC) $(CFLAGS) -o main main.o MapLoader.o AttractionMapper.o SegmentMapper.o Navigator.o
+main.a: main.o MapLoader.o AttractionMapper.o SegmentMapper.o Navigator.o support.o
+	$(CC) $(CFLAGS) -o main main.o MapLoader.o AttractionMapper.o SegmentMapper.o Navigator.o support.o
 
 main.o: main.cpp
 	$(CC) $(CFLAGS) -c main.cpp
@@ -21,3 +21,6 @@ SegmentMapper.o: SegmentMapper.cpp
 
 Navigator.o: Navigator.cpp
 	$(CC) $(CFLAGS) -c Navigator.cpp
+
+support.o: support.cpp
+	$(CC) $(CFLAGS) -c support.cpp

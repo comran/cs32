@@ -1,5 +1,6 @@
 #include "MyMap.h"
 #include "provided.h"
+#include "support.h"
 
 #include <iostream>
 #include <string>
@@ -15,18 +16,12 @@ struct TravelCost {
   StreetSegment segment;
   vector<NavSegment> navigation;
   double cost;
+  double temp_cost;
 };
 
 bool operator<(const TravelCost &a, const TravelCost &b) {
-  return a.cost > b.cost;
-}
-
-bool operator==(const GeoCoord &a, const GeoCoord &b) {
-  return a.latitude == b.latitude && a.longitude == b.longitude;
-}
-
-bool operator==(const GeoSegment &a, const GeoSegment &b) {
-  return a.start == b.start && a.end == b.end;
+  //return a.cost + a.temp_cost > b.cost + b.temp_cost;
+  return a.cost + a.temp_cost > b.cost + b.temp_cost;
 }
 
 void printStreetSeg(const StreetSegment &seg) {
@@ -82,9 +77,9 @@ NavResult NavigatorImpl::navigate(string start, string end,
   if (!attraction_mapper_.getGeoCoord(start, src)) return NAV_BAD_SOURCE;
   if (!attraction_mapper_.getGeoCoord(end, dst)) return NAV_BAD_DESTINATION;
 
-  vector<GeoCoord> have_gone;
   priority_queue<TravelCost> to_go;
   vector<StreetSegment> init_segments = segment_mapper_.getSegments(src);
+  MyMap<GeoCoord, bool> visited;
 
   for (int i = 0; i < init_segments.size(); i++) {
     vector<NavSegment> navigation;
@@ -98,16 +93,12 @@ NavResult NavigatorImpl::navigate(string start, string end,
 
     navigation.push_back(NavSegment("", street_name, 0, geo_segment));
 
-    to_go.push(TravelCost({init_segments.at(i), navigation, distance}));
+    to_go.push(TravelCost({init_segments.at(i), navigation, distance, 0}));
   }
 
   bool found = false;
-  int iterate = 0;
 
   while (to_go.size() > 0 && !found) {
-    iterate++;
-    if (iterate % 1000 == 0) cout << "Ran: " << iterate << endl;
-
     TravelCost segment_cost = to_go.top();
     to_go.pop();
 
@@ -123,10 +114,6 @@ NavResult NavigatorImpl::navigate(string start, string end,
         finalizeNavSegments(segment_cost.navigation);
 
         found = true;
-        cout << "FOUND " << segment_cost.segment.streetName << "\n";
-        cout << "distance: " << segment_cost.cost << "\n";
-        cout << "iterate: " << iterate << "\n";
-        printCoord(dst);
 
         directions = segment_cost.navigation;
         return NAV_SUCCESS;
@@ -139,20 +126,11 @@ NavResult NavigatorImpl::navigate(string start, string end,
     travel_to.push_back(segment_cost.segment.segment.start);
     travel_to.push_back(segment_cost.segment.segment.end);
 
-    for (int i = 0; i < have_gone.size(); i++) {
-      for (int j = 0; j < travel_to.size(); j++) {
-        if (have_gone.at(i) == travel_to.at(j)) {
-          travel_to.erase(travel_to.begin() + j);
-          j--;
-        }
-      }
-    }
-
     for (int i = 0; i < travel_to.size(); i++) {
-      have_gone.push_back(travel_to.at(i));
-    }
+      bool *gc = visited.find(travel_to.at(i));
+      if (gc != nullptr) continue;
+      visited.associate(travel_to.at(i), true);
 
-    for (int i = 0; i < travel_to.size(); i++) {
       vector<StreetSegment> new_segments =
           segment_mapper_.getSegments(travel_to.at(i));
 
@@ -168,17 +146,18 @@ NavResult NavigatorImpl::navigate(string start, string end,
 
         NavSegment &from_segment = new_nav.back();
         from_segment.m_geoSegment.end = travel_to.at(i);
-        double distance = distanceEarthMiles(
-            from_segment.m_geoSegment.start, from_segment.m_geoSegment.end);
-        from_segment.m_distance = distance;
-        from_segment.m_streetName = new_segments.at(i).streetName;
 
-        NavSegment to_segment("", new_segments.at(i).streetName, 0,
+        double distance = distanceEarthMiles(from_segment.m_geoSegment.start,
+                                             from_segment.m_geoSegment.end);
+        from_segment.m_distance = distance;
+
+        NavSegment to_segment("", new_segments.at(j).streetName, 0,
                               GeoSegment(travel_to.at(i), GeoCoord()));
         new_nav.push_back(to_segment);
 
         to_go.push(TravelCost({new_segments.at(j), new_nav,
-                               segment_cost.cost + distance}));
+                               segment_cost.cost + distance,
+                               distanceEarthMiles(travel_to.at(i), dst)}));
       }
     }
   }
@@ -226,12 +205,12 @@ void NavigatorImpl::finalizeNavSegments(vector<NavSegment> &segments) const {
       if (segments.at(i).m_streetName != segments.at(i - 1).m_streetName) {
         double angle = angleBetween2Lines(segments.at(i - 1).m_geoSegment,
                                           segments.at(i).m_geoSegment);
+
         NavSegment turn_seg =
             NavSegment(turnAngleToString(angle), segments.at(i).m_streetName);
-        cout << setw(8) << turnAngleToString(angle) << ": " << setw(10) << angle
-             << endl;
 
         segments.insert(segments.begin() + i, turn_seg);
+
         continue;
       } else {
         segments.at(i).m_direction = proceedAngleToString(trueAngle(
@@ -240,6 +219,7 @@ void NavigatorImpl::finalizeNavSegments(vector<NavSegment> &segments) const {
     } else {
       GeoSegment &geo_segment = segments.at(i).m_geoSegment;
       double distance = distanceEarthMiles(geo_segment.start, geo_segment.end);
+
       segments.at(i).m_distance = distance;
       segments.at(i).m_direction =
           proceedAngleToString(angleOfLine(segments.at(i).m_geoSegment));
@@ -271,13 +251,14 @@ NavResult Navigator::navigate(string start, string end,
 
 // TODO(comran):
 // REMOVE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/*
 int main() {
   Navigator nav;
   nav.loadMapData("./mapdata.txt");
 
   vector<NavSegment> directions;
-  NavResult nav_return = nav.navigate("Brentwood Country Mart",
-                                      "Theta Delta Chi Fraternity", directions);
+  NavResult nav_return = nav.navigate("Diddy Riese",
+                                      "Fir", directions);
 
   cout << "Navigation returned " << nav_return << endl;
   for (int i = 0; i < directions.size(); i++) {
@@ -294,6 +275,7 @@ int main() {
            << "      end: " << directions.at(i).m_geoSegment.end.latitudeText
            << ", " << directions.at(i).m_geoSegment.end.longitudeText;
     }
+
     cout << endl;
   }
 
@@ -305,6 +287,7 @@ int main() {
          << directions.at(i).m_geoSegment.start.longitudeText << endl;
   }
 }
+*/
 
 // This is the BruinNav main routine.  If the executable built from this file
 // and the other .cpp files you write is named BruinNav (or BruinNav.exe on
@@ -379,7 +362,7 @@ int main() {
 // say IN_SOME_DIRECTION instead of east or southwest or some actual direction.
 // That's because of the template appearing a few lines below; read the comment
 // before it.
-/*
+
 #include "provided.h"
 //#include "support.h"
 #include <iostream>
@@ -389,7 +372,7 @@ int main() {
 using namespace std;
 
 // START OF WHAT YOU CAN REMOVE ONCE YOU'VE IMPLEMENTED string
-directionOfLine(const GeoSegment& gs)
+// directionOfLine(const GeoSegment& gs)
 // If you want the turn-by-turn directions to give a real direction like
 // east or southwest instead of IN_SOME_DIRECTION, you'll need to
 // implement the ordinary function
@@ -403,9 +386,8 @@ directionOfLine(const GeoSegment& gs)
 // method.  Since it's useful in more than one .cpp file, its declaration
 // should go in support.h and its implementation in support.cpp.
 
-template<typename T>
-string directionOfLine(const T& t)
-{
+template <typename T>
+string directionOfLine(const T &t) {
   double angle = angleOfLine(t);
   angle = fmod(angle, 360.0);
 
@@ -433,99 +415,86 @@ string directionOfLine(const T& t)
   return "INVALID";
 }
 // END OF WHAT YOU CAN REMOVE ONCE YOU'VE IMPLEMENTED string
-directionOfLine(const GeoSegment& gs)
+// directionOfLine(const GeoSegment& gs)
 
-void printDirectionsRaw(string start, string end, vector<NavSegment>&
-navSegments);
-void printDirections(string start, string end, vector<NavSegment>& navSegments);
+void printDirectionsRaw(string start, string end,
+                        vector<NavSegment> &navSegments);
+void printDirections(string start, string end, vector<NavSegment> &navSegments);
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   bool raw = false;
-  if (argc == 5  &&  strcmp(argv[4], "-raw") == 0)
-  {
+  if (argc == 5 && strcmp(argv[4], "-raw") == 0) {
     raw = true;
     argc--;
   }
-  if (argc != 4)
-  {
-    cout << "Usage: BruinNav mapdata.txt \"start attraction\" \"end attraction
-name\"" << endl
-       << "or" << endl
-       << "Usage: BruinNav mapdata.txt \"start attraction\" \"end attraction
-name\" -raw" << endl;
+  if (argc != 4) {
+    cout << "Usage: BruinNav mapdata.txt \"start attraction\" \"end attraction "
+            "name\"" << endl << "or" << endl
+         << "Usage: BruinNav mapdata.txt \"start attraction\" \"end attraction "
+            "name\" -raw" << endl;
     return 1;
   }
 
   Navigator nav;
 
-  if ( ! nav.loadMapData(argv[1]))
-  {
-    cout << "Map data file was not found or has bad format: " << argv[1] <<
-endl;
+  if (!nav.loadMapData(argv[1])) {
+    cout << "Map data file was not found or has bad format: " << argv[1]
+         << endl;
     return 1;
   }
 
-  if ( ! raw)
-    cout << "Routing..." << flush;
+  if (!raw) cout << "Routing..." << flush;
 
   string start = argv[2];
   string end = argv[3];
   vector<NavSegment> navSegments;
 
   NavResult result = nav.navigate(start, end, navSegments);
-  if ( ! raw)
-    cout << endl;
+  if (!raw) cout << endl;
 
-  switch (result)
-  {
+  switch (result) {
     case NAV_NO_ROUTE:
-    cout << "No route found between " << start << " and " << end << endl;
-    break;
+      cout << "No route found between " << start << " and " << end << endl;
+      break;
     case NAV_BAD_SOURCE:
-    cout << "Start attraction not found: " << start << endl;
-    break;
+      cout << "Start attraction not found: " << start << endl;
+      break;
     case NAV_BAD_DESTINATION:
-    cout << "End attraction not found: " << end << endl;
-    break;
+      cout << "End attraction not found: " << end << endl;
+      break;
     case NAV_SUCCESS:
-    if (raw)
-      printDirectionsRaw(start, end, navSegments);
-    else
-      printDirections(start, end, navSegments);
-    break;
+      if (raw)
+        printDirectionsRaw(start, end, navSegments);
+      else
+        printDirections(start, end, navSegments);
+      break;
   }
 }
 
-void printDirectionsRaw(string start, string end, vector<NavSegment>&
-navSegments)
-{
+void printDirectionsRaw(string start, string end,
+                        vector<NavSegment> &navSegments) {
   cout << "Start: " << start << endl;
   cout << "End:   " << end << endl;
   cout.setf(ios::fixed);
   cout.precision(4);
-  for (auto ns : navSegments)
-  {
-    switch (ns.m_command)
-    {
+  for (auto ns : navSegments) {
+    switch (ns.m_command) {
       case NavSegment::PROCEED:
-      cout << ns.m_geoSegment.start.latitudeText << ","
-           << ns.m_geoSegment.start.longitudeText << " "
-           << ns.m_geoSegment.end.latitudeText << ","
-           << ns.m_geoSegment.end.longitudeText << " "
-           << ns.m_direction << " "
-           << ns.m_distance << " "
-           << ns.m_streetName << endl;
-      break;
+        cout << ns.m_geoSegment.start.latitudeText << ","
+             << ns.m_geoSegment.start.longitudeText << " "
+             << ns.m_geoSegment.end.latitudeText << ","
+             << ns.m_geoSegment.end.longitudeText << " " << ns.m_direction
+             << " " << ns.m_distance << " " << ns.m_streetName << endl;
+        break;
       case NavSegment::TURN:
-      cout << "turn " << ns.m_direction << " " << ns.m_streetName << endl;
-      break;
+        cout << "turn " << ns.m_direction << " " << ns.m_streetName << endl;
+        break;
     }
   }
 }
 
-void printDirections(string start, string end, vector<NavSegment>& navSegments)
-{
+void printDirections(string start, string end,
+                     vector<NavSegment> &navSegments) {
   cout.setf(ios::fixed);
   cout.precision(2);
 
@@ -536,31 +505,28 @@ void printDirections(string start, string end, vector<NavSegment>& navSegments)
   GeoSegment effectiveSegment;
   double distSinceLastTurn = 0;
 
-  for (auto ns : navSegments)
-  {
-    switch (ns.m_command)
-    {
+  for (auto ns : navSegments) {
+    switch (ns.m_command) {
       case NavSegment::PROCEED:
-      if (thisStreet.empty())
-      {
-        thisStreet = ns.m_streetName;
-        effectiveSegment.start = ns.m_geoSegment.start;
-      }
-      effectiveSegment.end = ns.m_geoSegment.end;
-      distSinceLastTurn += ns.m_distance;
-      totalDistance += ns.m_distance;
-      break;
+        if (thisStreet.empty()) {
+          thisStreet = ns.m_streetName;
+          effectiveSegment.start = ns.m_geoSegment.start;
+        }
+        effectiveSegment.end = ns.m_geoSegment.end;
+        distSinceLastTurn += ns.m_distance;
+        totalDistance += ns.m_distance;
+        break;
       case NavSegment::TURN:
-      if (distSinceLastTurn > 0)
-      {
-        cout << "Proceed " << distSinceLastTurn << " miles "
-             << directionOfLine(effectiveSegment) << " on " << thisStreet <<
-endl;
-        thisStreet.clear();
-        distSinceLastTurn = 0;
-      }
-      cout << "Turn " << ns.m_direction << " onto " << ns.m_streetName << endl;
-      break;
+        if (distSinceLastTurn > 0) {
+          cout << "Proceed " << distSinceLastTurn << " miles "
+               << directionOfLine(effectiveSegment) << " on " << thisStreet
+               << endl;
+          thisStreet.clear();
+          distSinceLastTurn = 0;
+        }
+        cout << "Turn " << ns.m_direction << " onto " << ns.m_streetName
+             << endl;
+        break;
     }
   }
 
@@ -570,4 +536,4 @@ endl;
   cout << "You have reached your destination: " << end << endl;
   cout.precision(1);
   cout << "Total travel distance: " << totalDistance << " miles" << endl;
-}*/
+}

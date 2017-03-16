@@ -1,4 +1,5 @@
 #include "provided.h"
+#include "support.h"
 #include "MyMap.h"
 
 #include <iostream>
@@ -17,15 +18,12 @@ class SegmentMapperImpl {
  private:
   void addPOI(const GeoCoord &gc, const StreetSegment &segment);
 
-  MyMap<double, MyMap<double, vector<StreetSegment>> *> segments_map_;
-  vector<MyMap<double, vector<StreetSegment>> *> segments_vector_;
+  MyMap<GeoCoord, vector<StreetSegment>> segments_map_;
 };
 
 SegmentMapperImpl::SegmentMapperImpl() {}
 
-SegmentMapperImpl::~SegmentMapperImpl() {
-  for(int i = 0;i < segments_vector_.size();i++) delete segments_vector_.at(i);
-}
+SegmentMapperImpl::~SegmentMapperImpl() {}
 
 void SegmentMapperImpl::init(const MapLoader &ml) {
   for (int i = 0; i < ml.getNumSegments(); i++) {
@@ -42,41 +40,25 @@ void SegmentMapperImpl::init(const MapLoader &ml) {
 }
 
 vector<StreetSegment> SegmentMapperImpl::getSegments(const GeoCoord &gc) const {
-  MyMap<double, vector<StreetSegment>> *const*latitude =
-      segments_map_.find(gc.latitude);
-  if(latitude == nullptr) return vector<StreetSegment>();
-  vector<StreetSegment> *longitude = (*latitude)->find(gc.longitude);
-  if(longitude == nullptr) return vector<StreetSegment>();
-  return *longitude;
+  const vector<StreetSegment> *segments = segments_map_.find(gc);
+
+  if (segments == nullptr) return vector<StreetSegment>();
+  return *segments;
 }
 
 void SegmentMapperImpl::addPOI(const GeoCoord &gc,
                                const StreetSegment &segment) {
-  MyMap<double, vector<StreetSegment>> **latitude =
-      segments_map_.find(gc.latitude);
+  vector<StreetSegment> *segments = segments_map_.find(gc);
 
-  if (latitude != nullptr) {
-    vector<StreetSegment> *segments = (*latitude)->find(gc.longitude);
-
-    if (segments != nullptr) {
-      segments->push_back(segment);
-      return;
-    }
-
+  if (segments == nullptr) {
     vector<StreetSegment> new_segments;
     new_segments.push_back(segment);
-    (*latitude)->associate(gc.longitude, new_segments);
+    segments_map_.associate(gc, new_segments);
+
+    return;
   }
 
-  vector<StreetSegment> new_segments;
-  new_segments.push_back(segment);
-
-  MyMap<double, vector<StreetSegment>> *new_latitude =
-      new MyMap<double, vector<StreetSegment>>();
-  new_latitude->associate(gc.longitude, new_segments);
-
-  segments_map_.associate(gc.latitude, new_latitude);
-  segments_vector_.push_back(new_latitude);
+  segments->push_back(segment);
 }
 
 //******************** SegmentMapper functions ********************************
