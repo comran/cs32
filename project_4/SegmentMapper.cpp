@@ -2,11 +2,8 @@
 #include "support.h"
 #include "MyMap.h"
 
-#include <iostream>
 #include <vector>
 using namespace std;
-
-// TODO(comran): Delete segment map properly on deconstruction.
 
 class SegmentMapperImpl {
  public:
@@ -26,13 +23,19 @@ SegmentMapperImpl::SegmentMapperImpl() {}
 SegmentMapperImpl::~SegmentMapperImpl() {}
 
 void SegmentMapperImpl::init(const MapLoader &ml) {
+  // Associate all street segments and attraction geocoords with any
+  // geocoordinates that they are associated with.
   for (int i = 0; i < ml.getNumSegments(); i++) {
     StreetSegment current_segment;
     if (!ml.getSegment(i, current_segment))
       cerr << "Street DNE @ num " << i << endl;
 
+    // Associate both sides of the street segment with the street.
     addPOI(current_segment.segment.start, current_segment);
     addPOI(current_segment.segment.end, current_segment);
+
+    // Also associate all coordinates of attractions at that street segment with
+    // the street segment.
     for (int i = 0; i < current_segment.attractions.size(); i++) {
       addPOI(current_segment.attractions.at(i).geocoordinates, current_segment);
     }
@@ -42,7 +45,11 @@ void SegmentMapperImpl::init(const MapLoader &ml) {
 vector<StreetSegment> SegmentMapperImpl::getSegments(const GeoCoord &gc) const {
   const vector<StreetSegment> *segments = segments_map_.find(gc);
 
+  // Geocoord not found in map, so return empty vector.
   if (segments == nullptr) return vector<StreetSegment>();
+
+  // Found segments associated with geocoord, so return the vector of street
+  // segments.
   return *segments;
 }
 
@@ -50,6 +57,8 @@ void SegmentMapperImpl::addPOI(const GeoCoord &gc,
                                const StreetSegment &segment) {
   vector<StreetSegment> *segments = segments_map_.find(gc);
 
+  // If no street segments exists at the given coordinate, create a vector and
+  // push back the given street segment.
   if (segments == nullptr) {
     vector<StreetSegment> new_segments;
     new_segments.push_back(segment);
@@ -58,6 +67,8 @@ void SegmentMapperImpl::addPOI(const GeoCoord &gc,
     return;
   }
 
+  // Street segments already exist at the given coordinate (intersection?), so
+  // append this new segment to that list.
   segments->push_back(segment);
 }
 

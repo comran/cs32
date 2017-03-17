@@ -1,0 +1,14 @@
+MyMap:
+associate(): If MyMap has a size of N, the Big-O of this method is O(log N)
+find(): If MyMap has a size of N, the Big-O of this method is O(log N)
+
+AttractionMapper:
+init(): If there are N street segments in the given map .txt and there are A total attractions, the Big-O of this method is O(N + A * log(A))
+getGeoCoord(): If there are A attractions, the Big-O of this method is O(log A)
+
+SegmentMapper:
+init(): If there are N street segments in the given map and A attractions, the big-O of this method is (N + A) * log(N + A)
+getSegments(): If there are N street segments in the map, the Big-O of this method is O(log(N + A))
+
+Navigator:
+navigate(): If there are N street segments in the map and A attractions scattered around the map, the Big-O of this method is O(N * log(N + A))

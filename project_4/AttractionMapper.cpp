@@ -1,7 +1,6 @@
 #include "provided.h"
 #include "MyMap.h"
 
-#include <iostream>
 #include <string>
 using namespace std;
 
@@ -23,28 +22,34 @@ AttractionMapperImpl::AttractionMapperImpl() {}
 AttractionMapperImpl::~AttractionMapperImpl() {}
 
 void AttractionMapperImpl::init(const MapLoader &ml) {
+  // Travel through all segments in the map.
   for (int i = 0; i < ml.getNumSegments(); i++) {
     StreetSegment current_segment;
     if (!ml.getSegment(i, current_segment))
       cerr << "Street DNE @ num " << i << endl;
 
+    // Associate all attraction names for the current street segment with the
+    // geocoord that they came from.
     for (int i = 0; i < current_segment.attractions.size(); i++) {
       attraction_map_.associate(
-          toLower(current_segment.attractions.at(i).name),
+          toLower(current_segment.attractions.at(i).name),  // Case-insensitive.
           current_segment.attractions.at(i).geocoordinates);
     }
   }
 }
 
 bool AttractionMapperImpl::getGeoCoord(string attraction, GeoCoord &gc) const {
+  // Perform a case-insensitive search for the geocoord in the tree.
   const GeoCoord *geo_coord = attraction_map_.find(toLower(attraction));
-  if(geo_coord == nullptr) return false;
-  gc = *geo_coord;
+  if(geo_coord == nullptr) return false;  // Geocoord not found
 
+  gc = *geo_coord;  // Pass back the geocoord.
   return true;
 }
 
 string AttractionMapperImpl::toLower(string input) const {
+  // Convert input string to lowercase.
+
   for(int j = 0;j < input.size();j++) {
     input[j] = tolower(input[j]);
   }
